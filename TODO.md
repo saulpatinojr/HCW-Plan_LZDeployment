@@ -208,49 +208,113 @@
 ## 🟠 Phase 2: High Priority (30-90 days) - STRONGLY RECOMMENDED
 
 **Deadline**: August 26, 2026  
-**Total Effort**: 43 hours (5 days)  
-**Monthly Cost**: $750  
+**Core Tasks**: 3 mandatory + 2 optional modules  
+**Core Effort**: 15 hours (2 days)  
+**Core Monthly Cost**: $200 (NSG Flow Logs + Traffic Analytics)  
 **Risk Reduction**: 25%
 
-### Task 2.1: Implement Customer-Managed Keys (CMK)
-**Priority**: 🟠 P1 - HIGH  
+**Core Tasks Summary**:
+1. Task 2.2: Enforce TLS 1.2 via Azure Policy (4h, $0)
+2. Task 5.3: Azure Firewall Threat Intelligence (3h, $0)
+3. Task 5.2: NSG Flow Logs + Traffic Analytics (8h, $200/mo)
+
+**Optional Modules** (create but don't auto-deploy):
+- Task 2.1 (CMK): +16 hours, +$250/month - Key Vault encryption module
+- Task 9.2 (Sentinel): +12 hours, +$300/month - SIEM module
+
+**Note**: Task 5.1 (GitHub Actions SHA pinning) was completed in Phase 1 ahead of schedule!
+
+---
+
+### Task 2.1: Customer-Managed Keys (CMK) ⚠️ OPTIONAL - DEFERRED
+**Priority**: 🟡 OPTIONAL (Additional cost - requires explicit opt-in)  
 **Effort**: 16 hours  
 **Cost**: $250/month  
+**Status**: ⏳ READY TO CREATE - Not deployed by default  
 **Assignee**: [TBD]
 
-**Subtasks**:
-- [ ] Create Key Vault module: `terraform/modules/keyvault-cmk/`
-- [ ] Deploy Key Vault Premium (for HSM-backed keys)
-- [ ] Configure Key Vault:
-  - [ ] Enable purge protection (required for CMK)
-  - [ ] Soft delete: 90 days
-  - [ ] Network ACLs: Deny default
-  - [ ] Private endpoint
-- [ ] Generate encryption keys:
-  - [ ] `tfstate-encryption-key` (RSA-HSM 4096)
-  - [ ] `backup-encryption-key`
-  - [ ] `storage-encryption-key`
-- [ ] Configure CMK for resources:
-  - [ ] Terraform state storage account
-  - [ ] Recovery Services Vaults
-  - [ ] Diagnostic storage accounts
-  - [ ] Flow log storage accounts
-- [ ] Add Key Vault access policies for:
-  - [ ] Automation managed identity
-  - [ ] Service principals
-  - [ ] Platform services
-- [ ] Implement key rotation policy (180 days)
-- [ ] Document key recovery procedures
-- [ ] Test backup/restore with CMK
+**Decision**: Module will be created but NOT integrated into automatic deployments due to:
+- ❗ Additional cost ($250/month for Premium Key Vault)
+- 🎯 Should be explicit opt-in for enhanced encryption
+- ⚖️ Basic Azure encryption-at-rest is enabled by default
+- 📖 Full deployment guide will be provided in module README
 
-**Acceptance Criteria**:
-- ✅ All storage accounts use CMK
+**When to Enable**:
+- Compliance requirements mandate customer-managed keys (HIPAA, PCI-DSS, FedRAMP)
+- Need audit trail for key usage
+- Require key rotation controls
+- Multi-tenant scenarios requiring key isolation
+
+**Module Location**: `terraform/modules/keyvault-cmk/`  
+**Deployment Guide**: TBD - will be created with module
+
+**Subtasks**:
+- [x] Module structure planned
+- [ ] **USER ACTION REQUIRED**: Review benefits and decide when to enable
+- [ ] **USER ACTION REQUIRED**: Create Key Vault Premium
+- [ ] **USER ACTION REQUIRED**: Generate encryption keys
+- [ ] **USER ACTION REQUIRED**: Configure CMK for storage accounts
+- [ ] **USER ACTION REQUIRED**: Test backup/restore with CMK
+
+**Acceptance Criteria** (if deployed):
+- ✅ Key Vault Premium deployed
+- ✅ CMK configured for critical resources
 - ✅ Key rotation policy active
 - ✅ Recovery procedures documented
-- ✅ Backup/restore tested successfully
 
-**New Module**:
-- `terraform/modules/keyvault-cmk/`
+**Will Create**:
+- `terraform/modules/keyvault-cmk/main.tf`
+- `terraform/modules/keyvault-cmk/variables.tf`
+- `terraform/modules/keyvault-cmk/outputs.tf`
+- `terraform/modules/keyvault-cmk/README.md` (deployment guide)
+
+---
+
+### Task 9.2: Azure Sentinel SIEM ⚠️ OPTIONAL - DEFERRED
+**Priority**: 🟡 OPTIONAL (Additional cost - requires explicit opt-in)  
+**Effort**: 12 hours  
+**Cost**: $300/month (~5GB/day)  
+**Status**: ⏳ READY TO CREATE - Not deployed by default  
+**Assignee**: [TBD]
+
+**Decision**: Module will be created but NOT integrated into automatic deployments due to:
+- ❗ Additional cost ($300/month for log ingestion)
+- 🎯 Should be explicit opt-in for SIEM capabilities
+- ⚖️ Basic Azure Activity Logs already enabled
+- 📖 Full deployment guide will be provided in module README
+
+**When to Enable**:
+- Need centralized security event correlation
+- Compliance requires SIEM (SOC 2, ISO 27001)
+- Building Security Operations Center (SOC)
+- Need automated incident response
+- Want ML-based threat detection
+
+**Module Location**: `terraform/modules/sentinel-siem/`  
+**Deployment Guide**: TBD - will be created with module
+
+**Subtasks**:
+- [x] Module structure planned
+- [ ] **USER ACTION REQUIRED**: Review benefits and decide when to enable
+- [ ] **USER ACTION REQUIRED**: Enable SecurityInsights solution
+- [ ] **USER ACTION REQUIRED**: Configure data connectors (Activity, Security Center, Firewall, Storage)
+- [ ] **USER ACTION REQUIRED**: Enable analytics rules (10+ built-in + custom)
+- [ ] **USER ACTION REQUIRED**: Configure incident automation with Logic Apps
+- [ ] **USER ACTION REQUIRED**: Create workbooks (SOC overview, compliance, trends)
+- [ ] **USER ACTION REQUIRED**: Document incident response playbooks
+
+**Acceptance Criteria** (if deployed):
+- ✅ Sentinel operational
+- ✅ Data connectors flowing
+- ✅ 10+ analytics rules active
+- ✅ Incident automation working
+- ✅ Playbooks documented
+
+**Will Create**:
+- `terraform/modules/sentinel-siem/main.tf`
+- `terraform/modules/sentinel-siem/variables.tf`
+- `terraform/modules/sentinel-siem/outputs.tf`
+- `terraform/modules/sentinel-siem/README.md` (deployment guide with connectors & rules)
 
 ---
 
@@ -318,53 +382,6 @@
 
 ---
 
-### Task 9.2: Deploy Azure Sentinel (SIEM)
-**Priority**: 🟠 P1 - HIGH  
-**Effort**: 12 hours  
-**Cost**: $300/month (~5GB/day)  
-**Assignee**: [TBD]
-
-**Subtasks**:
-- [ ] Enable SecurityInsights solution on Log Analytics workspace
-- [ ] Configure data connectors:
-  - [ ] Azure Activity
-  - [ ] Azure Security Center
-  - [ ] Azure Firewall
-  - [ ] Azure Storage
-  - [ ] Office 365 (if applicable)
-- [ ] Enable built-in analytics rules:
-  - [ ] Suspicious resource deployment
-  - [ ] Privilege escalation
-  - [ ] Mass secret retrieval
-  - [ ] Unusual resource deletion
-- [ ] Create custom detection rules:
-  - [ ] Sandbox cleanup failures
-  - [ ] Terraform state anomalous access
-  - [ ] NSG/Firewall rule changes
-  - [ ] Policy exemption created
-- [ ] Configure incident automation:
-  - [ ] Create Logic App for incident response
-  - [ ] Integrate with ticketing system
-  - [ ] Configure email notifications
-- [ ] Create workbooks for:
-  - [ ] Security operations overview
-  - [ ] Compliance status
-  - [ ] Incident trends
-- [ ] Document incident response playbooks
-- [ ] Train SOC team on Sentinel
-
-**Acceptance Criteria**:
-- ✅ Sentinel operational
-- ✅ Data connectors flowing
-- ✅ 10+ analytics rules active
-- ✅ Incident automation working
-- ✅ Playbooks documented
-
-**File to Update**:
-- `terraform/modules/platform-management/main.tf` (add Sentinel resources)
-
----
-
 ### Task 5.2: Enable NSG Flow Logs + Traffic Analytics
 **Priority**: 🟠 P1 - HIGH  
 **Effort**: 8 hours  
@@ -403,28 +420,29 @@
 
 ---
 
-### Task 5.1: Pin GitHub Actions to Commit SHAs
-**Priority**: 🟠 P1 - MEDIUM (supply chain security)  
-**Effort**: 2 hours  
+### Task 5.1: Pin GitHub Actions to Commit SHAs ✅ COMPLETE
+**Priority**: ✅ COMPLETED IN PHASE 1  
+**Effort**: 2 hours (actual)  
 **Cost**: $0  
-**Assignee**: [TBD]
+**Status**: ✅ **COMPLETE** (May 28, 2026 - Phase 1)  
+**Assignee**: Completed ahead of schedule
 
-**Subtasks**:
-- [ ] Pin `actions/checkout@v4` to SHA
-- [ ] Pin `hashicorp/setup-terraform@v3` to SHA
-- [ ] Pin `azure/login@v2` to SHA
-- [ ] Pin all other actions used in workflows
-- [ ] Add comments with version tags for reference
-- [ ] Configure Dependabot for GitHub Actions
-- [ ] Test workflows with pinned versions
-- [ ] Document action update process
+**Note**: This task was completed during Phase 1 security remediation as part of Task 1.1 (Service Principal RBAC Validation). All GitHub Actions in terraform-plan.yml and terraform-apply.yml were pinned to commit SHAs for supply chain security.
 
-**Acceptance Criteria**:
+**Completed Actions**:
+- [x] Pin `actions/checkout@v4` to SHA `b4ffde65f46336ab88eb53be808477a3936bae11`
+- [x] Pin `hashicorp/setup-terraform@v3` to SHA `b9cd54a3c349d3f38e8881555d616ced269862dd`
+- [x] Pin `azure/login@v2` to SHA `6c251865b4e6290e7b78be643ea2d005bc51f69a`
+- [x] Add comments with version tags for reference
+- [x] Configure Dependabot for GitHub Actions
+- [x] Test workflows with pinned versions
+
+**Acceptance Criteria Met**:
 - ✅ All actions pinned to commit SHAs
-- ✅ Dependabot tracking updates
+- ✅ Dependabot tracking updates via `.github/dependabot.yml`
 - ✅ Workflows passing
 
-**Files to Update**:
+**Files Updated** (Phase 1):
 - `.github/workflows/terraform-plan.yml`
 - `.github/workflows/terraform-apply.yml`
 
