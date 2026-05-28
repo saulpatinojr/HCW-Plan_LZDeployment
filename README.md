@@ -166,10 +166,13 @@ HCW-Demo-LZDeployment/
 ## Security Status
 
 **Last Audit**: May 28, 2026  
+**Phase 0 Status**: ⏳ **READY TO START** (Bootstrap: GitHub + Azure integration)  
 **Phase 1 Status**: ✅ **COMPLETE** (May 28, 2026)  
 **Phase 2 Status**: ✅ **CORE TASKS COMPLETE** (May 28, 2026)  
 **Security Posture**: 🟢 **STRONG** (0 CRITICAL, 9 HIGH remaining)  
 **Compliance Level**: Substantial compliance across all frameworks
+
+> **⚠️ Important**: Phase 0 (Bootstrap) must be completed before Phase 1-4 work can begin. [See bootstrap guide →](docs/bootstrap/GITHUB-AZURE-BOOTSTRAP.md)
 
 ### Current Status
 
@@ -298,11 +301,22 @@ Phase 2 core security controls are complete! Infrastructure now has strong secur
 
 | Phase | Timeline | Effort | Monthly Cost | Risk Reduction | Status |
 |---|---|---|---|---|---|
+| **Phase 0 (Bootstrap)** | Day 1 | 4-6h | $0 | Foundation | ⏳ **READY TO START** |
 | **Phase 1** | 0-30 days | 16h | $40 | 60% | ✅ **COMPLETE** (May 28, 2026) |
 | **Phase 2** | 30-90 days | 15h core | +$200 | 25% | ✅ **CORE COMPLETE** (May 28, 2026) |
 | **Phase 2 Optional** | On-demand | +28h | +$550 | +10% | ⚠️ Modules ready (CMK, Sentinel) |
 | **Phase 3** | 90-180 days | 60h | +$350 | 10% | 📋 Ready to start |
 | **Phase 4** | Ongoing | 40h | $0 | 5% | 📋 Planned |
+
+**Phase 0 (Bootstrap) Deliverables** ⏳:
+- GitHub repository with branch protection
+- Entra SSO for engineer access (requires GitHub Enterprise Cloud)
+- GitHub Actions OIDC federation to Azure (no long-lived secrets)
+- Terraform remote state backend (Azure Storage with TLS 1.2)
+- CI/CD workflows (terraform-validate, terraform-apply)
+- End-to-end validation workflow
+- **[Complete bootstrap guide →](docs/bootstrap/GITHUB-AZURE-BOOTSTRAP.md)**
+- **[Bootstrap progress tracker →](docs/bootstrap/BOOTSTRAP-PROGRESS-TRACKER.md)**
 
 **Phase 1 Deliverables** ✅ (May 28, 2026):
 - RBAC validation in CI/CD workflows
@@ -325,10 +339,10 @@ Phase 2 core security controls are complete! Infrastructure now has strong secur
 - Azure Sentinel SIEM module (+12h, +$300/mo)
 - Run `.\scripts\Configure-DeploymentOptions.ps1` to enable
 
-**Total Investment (Phases 1-2 Core)**: 31 hours | $240/month | $2,880/year  
-**With All Optional Modules**: 75 hours | $1,090/month | $13,080/year
+**Total Investment (Phase 0 + Phases 1-2 Core)**: 37-39 hours | $240/month | $2,880/year  
+**With All Optional Modules**: 81-83 hours | $1,090/month | $13,080/year
 
-**[View detailed plan →](TODO.md)** | **[Security audit report →](docs/compliance/SECURITY-AUDIT-REPORT-2026-05-28.md)**
+**[View detailed plan →](TODO.md)** | **[Security audit report →](docs/compliance/SECURITY-AUDIT-REPORT-2026-05-28.md)** | **[Bootstrap guide →](docs/bootstrap/GITHUB-AZURE-BOOTSTRAP.md)**
 | **Phase 3** | 90-180 days | 60h | +$350 | 10% | Private endpoints, resource locks, comprehensive logging |
 | **Phase 4** | Ongoing | 40h | $0 | 5% | Documentation, hardening, operational excellence |
 

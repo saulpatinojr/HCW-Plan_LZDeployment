@@ -8,7 +8,128 @@
 
 ---
 
-## 🚨 Phase 1: Critical Remediations (0-30 days) - MANDATORY FOR PRODUCTION
+## � Phase 0: Bootstrap - GitHub + Azure Integration (Day 1) - MANDATORY
+
+**Status**: ⏳ **READY TO START**  
+**Priority**: 🔴 **MUST COMPLETE BEFORE PHASE 1**  
+**Effort**: 4-6 hours (manual setup)  
+**Cost**: $0  
+**Deadline**: Before any Phase 1-4 work begins
+
+> **⚠️ CRITICAL**: Phase 0 must be completed in full before any infrastructure deployment or security remediation work can begin. This establishes the foundational GitHub + Azure integration required for all subsequent phases.
+
+**What This Phase Delivers**:
+- ✅ GitHub repository with branch protection
+- ✅ Entra SSO for engineer access (requires GitHub Enterprise Cloud)
+- ✅ GitHub Actions OIDC federation to Azure (no long-lived secrets)
+- ✅ Terraform remote state backend (Azure Storage with TLS 1.2)
+- ✅ CI/CD workflows (terraform-validate, terraform-apply)
+- ✅ End-to-end validated deployment pipeline
+
+**Comprehensive Guides**:
+- **[Bootstrap Runbook →](docs/bootstrap/GITHUB-AZURE-BOOTSTRAP.md)** - Step-by-step implementation guide
+- **[Progress Tracker →](docs/bootstrap/BOOTSTRAP-PROGRESS-TRACKER.md)** - Checklist with validation checkpoints
+
+### Phase 0 Tasks Overview
+
+#### Section 1: Azure Identifiers (10 minutes)
+- [ ] Sign in to Azure CLI
+- [ ] Select correct subscription
+- [ ] Capture and record Tenant ID and Subscription ID
+- [ ] **Validation Checkpoint 1 PASSED**: Both GUIDs recorded
+
+#### Section 2: Entra SSO for GitHub (60-90 minutes)
+- [ ] Add GitHub Enterprise Cloud app in Entra
+- [ ] Configure SAML SSO (Entity ID, Reply URL, Sign-on URL)
+- [ ] Download SAML signing certificate
+- [ ] Configure GitHub Enterprise SAML settings
+- [ ] **Validation Checkpoint 2a PASSED**: SAML test successful
+- [ ] Assign engineers to GitHub enterprise app
+- [ ] **Validation Checkpoint 2b PASSED**: Pilot engineer sign-in successful
+
+> **Note**: This section requires GitHub Enterprise Cloud licensing. Can be skipped temporarily if not available yet.
+
+#### Section 3: GitHub Repository Creation (15 minutes)
+- [ ] Create repository `HCW-Demo-LZDeployment` (Private)
+- [ ] Clone repository locally
+- [ ] Create folder structure
+- [ ] Add Terraform .gitignore
+- [ ] Add CODEOWNERS file
+- [ ] **Validation Checkpoint 3 PASSED**: Repository structure visible
+
+#### Section 4: Branch Protection (15 minutes)
+- [ ] Configure branch protection for `main`
+  - [ ] Require PR before merging (1+ approvals)
+  - [ ] Require status checks to pass
+  - [ ] Require conversation resolution
+  - [ ] Do not allow bypassing settings
+  - [ ] Restrict who can push
+  - [ ] Do not allow force pushes
+  - [ ] Do not allow deletions
+- [ ] **Validation Checkpoint 4 PASSED**: Direct push to main rejected
+
+#### Section 5: GitHub Actions OIDC to Azure (30 minutes)
+- [ ] Create Entra app registration
+- [ ] Create service principal
+- [ ] Create federated credential for main branch
+- [ ] **Validation Checkpoint 5a PASSED**: Credential listed
+- [ ] Assign Contributor role at subscription level
+- [ ] **Validation Checkpoint 5b PASSED**: Role assignment verified
+- [ ] Add GitHub secrets (AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID)
+- [ ] **Validation Checkpoint 5c PASSED**: All secrets visible
+
+#### Section 6: First GitHub Actions Workflow (20 minutes)
+- [ ] Create auth test workflow (azure-auth-test.yml)
+- [ ] Push via pull request
+- [ ] Run workflow manually
+- [ ] **Validation Checkpoint 6 PASSED**: Workflow successful, Azure context verified
+
+#### Section 7: Terraform Remote State Backend (30 minutes)
+- [ ] Create resource group `rg-tfstate-platform-scus-001`
+- [ ] Create storage account with TLS 1.2 minimum
+- [ ] Create blob container `tfstate`
+- [ ] **Validation Checkpoint 7 PASSED**: Storage account verified (TLS1_2, publicAccess=False)
+- [ ] Configure Terraform backend in main.tf
+- [ ] **Validation Checkpoint 7b PASSED**: `terraform init` successful
+
+**🔐 CRITICAL**: Record storage account name - you'll need it for all future Terraform operations!
+
+#### Section 8: Terraform CI/CD Workflows (20 minutes)
+- [ ] Create terraform-validate.yml (runs on PR)
+- [ ] Create terraform-apply.yml (runs on merge to main)
+- [ ] Commit workflows via PR
+- [ ] Workflows visible in Actions tab
+
+#### Section 9: End-to-End Validation (30 minutes)
+- [ ] Engineer creates feature branch with test change
+- [ ] Engineer opens PR
+- [ ] Branch protection prevents direct merge
+- [ ] Terraform Validate workflow runs and passes
+- [ ] Reviewer approves PR
+- [ ] PR merged to main
+- [ ] Terraform Apply workflow triggers
+- [ ] GitHub Actions authenticates via OIDC
+- [ ] Terraform initializes with remote backend
+- [ ] Terraform plan and apply succeed
+- [ ] **ALL FINAL VALIDATION CHECKPOINTS PASSED**
+
+### Phase 0 Completion Checklist
+
+**Before declaring Phase 0 complete, confirm:**
+- [ ] All 10 sections completed
+- [ ] All validation checkpoints passed
+- [ ] End-to-end deployment workflow tested successfully
+- [ ] No Azure secrets or credentials visible in logs
+- [ ] Terraform state exists in remote backend
+- [ ] Documentation updated with actual values (storage account name, App ID, etc.)
+
+**Phase 0 Complete!** ✅  
+**Completion Date**: `___________________`  
+**Completed By**: `___________________`
+
+---
+
+## �🚨 Phase 1: Critical Remediations (0-30 days) - MANDATORY FOR PRODUCTION
 
 **Deadline**: June 27, 2026  
 **Core Tasks**: 4 mandatory + 1 optional  
