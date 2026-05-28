@@ -11,9 +11,12 @@
 ## 🚨 Phase 1: Critical Remediations (0-30 days) - MANDATORY FOR PRODUCTION
 
 **Deadline**: June 27, 2026  
-**Total Effort**: 22 hours (3 days)  
-**Monthly Cost**: $1,540  
+**Core Tasks**: 4 mandatory + 1 optional  
+**Core Effort**: 16 hours (2 days)  
+**Core Monthly Cost**: $40  
 **Risk Reduction**: 60%
+
+**Optional Task** (Task 5.5 - Microsoft Defender): +6 hours, +$1,500-$3,000/month - Module ready, deployment deferred
 
 ### Task 1.1: Service Principal RBAC Validation & Scoping
 **Priority**: 🔴 P0 - CRITICAL  
@@ -119,41 +122,51 @@
 
 ---
 
-### Task 5.5: Enable Microsoft Defender for Cloud
-**Priority**: 🔴 P0 - CRITICAL  
+### Task 5.5: Enable Microsoft Defender for Cloud ⚠️ OPTIONAL - DEFERRED
+**Priority**: 🟡 OPTIONAL (High cost - requires explicit opt-in)  
 **Effort**: 6 hours  
 **Cost**: $1,500-$3,000/month  
+**Status**: ✅ MODULE READY - Not deployed by default  
 **Assignee**: [TBD]
 
-**Subtasks**:
-- [ ] Create Defender baseline module: `terraform/modules/defender-baseline/`
-- [ ] Enable Defender plans for:
-  - [ ] Virtual Machines
-  - [ ] Storage Accounts
-  - [ ] SQL Servers
-  - [ ] Kubernetes Service (AKS)
-  - [ ] Container Registry
-  - [ ] Key Vaults
-  - [ ] App Services
-- [ ] Configure security contact email
-- [ ] Enable auto-provisioning of Log Analytics agent
-- [ ] Configure workspace connection
-- [ ] Deploy across all subscriptions (global layer)
-- [ ] Verify Defender data flowing to portal
-- [ ] Review initial security recommendations
-- [ ] Configure alert rules for high/critical findings
-- [ ] Document Defender response procedures
+**Decision**: Module created but NOT integrated into automatic deployments due to:
+- ❗ Significant recurring cost ($1,500-$3,000/month)
+- ⏳ More valuable after production workloads are deployed
+- 🎯 Should be explicit opt-in decision, not default
+- 📖 Full deployment guide available in module README
 
-**Acceptance Criteria**:
-- ✅ Defender enabled on all 6 subscriptions
+**When to Enable**:
+- Production workloads running with sensitive data
+- Compliance requirements (SOC 2, ISO 27001, HIPAA)
+- Need vulnerability assessments and threat detection
+- Budget approved for security tooling
+
+**Module Location**: `terraform/modules/defender-baseline/`  
+**Deployment Guide**: `terraform/modules/defender-baseline/README.md`
+
+**Subtasks**:
+- [x] Create Defender baseline module: `terraform/modules/defender-baseline/`
+- [x] Define variables for all Defender plans
+- [x] Configure security contact settings
+- [x] Auto-provisioning configuration
+- [x] Workspace connection support
+- [x] Documentation with cost optimization tips
+- [ ] **USER ACTION REQUIRED**: Review README and decide when to enable
+- [ ] **USER ACTION REQUIRED**: Create `defender.tfvars` if enabling
+- [ ] **USER ACTION REQUIRED**: Integrate module into global layer
+- [ ] **USER ACTION REQUIRED**: Deploy and verify
+
+**Acceptance Criteria** (if deployed):
+- ✅ Defender enabled on chosen subscriptions
 - ✅ Security score visible in portal
 - ✅ Alerts configured
 - ✅ Security contact receiving notifications
 
-**New Module**:
-- `terraform/modules/defender-baseline/main.tf`
-- `terraform/modules/defender-baseline/variables.tf`
-- `terraform/modules/defender-baseline/outputs.tf`
+**Created Files**:
+- ✅ `terraform/modules/defender-baseline/main.tf`
+- ✅ `terraform/modules/defender-baseline/variables.tf`
+- ✅ `terraform/modules/defender-baseline/outputs.tf`
+- ✅ `terraform/modules/defender-baseline/README.md` (deployment guide)
 
 ---
 

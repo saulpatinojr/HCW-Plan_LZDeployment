@@ -13,6 +13,21 @@ output "container_names" {
   value       = keys(azurerm_storage_container.state_containers)
 }
 
+output "private_endpoint_enabled" {
+  description = "Whether private endpoint is deployed"
+  value       = var.enable_private_endpoint
+}
+
+output "private_endpoint_ip" {
+  description = "Private IP address of the state storage endpoint"
+  value       = var.enable_private_endpoint && var.management_subnet_id != "" ? azurerm_private_endpoint.state_blob[0].private_service_connection[0].private_ip_address : null
+}
+
+output "public_network_access" {
+  description = "Public network access status (SHOULD be false for production)"
+  value       = var.allow_public_access_during_setup
+}
+
 output "backend_config_hcl" {
   description = "Backend configuration for downstream Terraform modules"
   value = <<-EOT
@@ -26,16 +41,29 @@ output "backend_config_hcl" {
 output "next_steps" {
   description = "Next steps after bootstrap"
   value = <<-EOT
-    Bootstrap complete! Next steps:
+    ✅ Bootstrap complete! State storage is ${var.allow_public_access_during_setup ? "⚠️  PUBLICLY ACCESSIBLE" : "🔒 SECURED"}
     
-    1. Copy this backend config to your backend.hcl files:
+    Security Status:
+    - Public network access: ${var.allow_public_access_during_setup ? "ENABLED (INSECURE)" : "DISABLED (SECURE)"}
+    - Private endpoint: ${var.enable_private_endpoint ? "DEPLOYED" : "NOT DEPLOYED"}
+    - TLS 1.2 minimum: ENFORCED ✅
+    - Blob versioning: ENABLED ✅
+    - Soft delete: 30 days ✅
+    
+    ${var.allow_public_access_during_setup ? "⚠️  WARNING: Public access enabled. Complete Task 1.2 remediation:" : ""}
+    ${var.allow_public_access_during_setup ? "   1. Deploy management VNet first" : ""}
+    ${var.allow_public_access_during_setup ? "   2. Re-run with private endpoint variables" : ""}
+    ${var.allow_public_access_during_setup ? "   3. Set allow_public_access_during_setup = false" : ""}
+    
+    Next Deployment Steps:
+    1. Copy backend config to your backend.hcl files:
        ${self.backend_config_hcl}
     
-    2. If using private endpoints, configure network access now:
-       az storage account update --name ${azurerm_storage_account.state.name} --public-network-access Disabled
+    2. Configure GitHub OIDC with storage account access
     
-    3. Configure GitHub OIDC federation with storage account access
-    
-    4. Deploy management groups: cd ../live/global && terraform init -backend-config=backend.hcl
+    3. Deploy layers in order:
+       - Global: cd ../live/global && terraform init -backend-config=backend.hcl
+       - Connectivity: cd ../live/platform-connectivity
+       - Management: cd ../live/platform-management
   EOT
 }

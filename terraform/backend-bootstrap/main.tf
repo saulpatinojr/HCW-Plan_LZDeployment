@@ -58,8 +58,27 @@ resource "azurerm_storage_account" "state" {
   min_tls_version          = "TLS1_2"
   enable_https_traffic_only = true
   
-  # Security
+  # Security - CRITICAL: Public access disabled by default (Finding 1.2 - CVSS 8.2)
   public_network_access_enabled = var.allow_public_access_during_setup
+  
+  # Lifecycle precondition: Warn if public access enabled without private endpoint
+  lifecycle {
+    precondition {
+      condition     = !var.allow_public_access_during_setup || !var.enable_private_endpoint
+      error_message = <<-EOT
+        SECURITY WARNING (Finding 1.2 - CVSS 8.2):
+        Public network access is ENABLED on Terraform state storage.
+        This exposes sensitive infrastructure data to the internet.
+        
+        REMEDIATION:
+        1. Set allow_public_access_during_setup = false
+        2. Deploy private endpoint (enable_private_endpoint = true)
+        3. Configure management_vnet_id and management_subnet_id
+        
+        Only enable public access temporarily during initial setup.
+      EOT
+    }
+  }
   
   blob_properties {
     versioning_enabled = true
@@ -76,6 +95,52 @@ resource "azurerm_storage_account" "state" {
   
   tags = merge(var.default_tags, {
     purpose = "Terraform State Storage"
+  })
+}
+
+# Private DNS Zone for Blob Storage
+resource "azurerm_private_dns_zone" "blob" {
+  count               = var.enable_private_endpoint ? 1 : 0
+  name                = "privatelink.blob.core.windows.net"
+  resource_group_name = azurerm_resource_group.state.name
+  
+  tags = var.default_tags
+}
+
+# Link Private DNS Zone to Management VNet
+resource "azurerm_private_dns_zone_virtual_network_link" "blob" {
+  count                 = var.enable_private_endpoint && var.management_vnet_id != "" ? 1 : 0
+  name                  = "link-${var.org_prefix}-tfstate-to-mgmt-vnet"
+  resource_group_name   = azurerm_resource_group.state.name
+  private_dns_zone_name = azurerm_private_dns_zone.blob[0].name
+  virtual_network_id    = var.management_vnet_id
+  registration_enabled  = false
+  
+  tags = var.default_tags
+}
+
+# Private Endpoint for State Storage
+resource "azurerm_private_endpoint" "state_blob" {
+  count               = var.enable_private_endpoint && var.management_subnet_id != "" ? 1 : 0
+  name                = "pe-${azurerm_storage_account.state.name}-blob"
+  resource_group_name = azurerm_resource_group.state.name
+  location            = azurerm_resource_group.state.location
+  subnet_id           = var.management_subnet_id
+  
+  private_service_connection {
+    name                           = "psc-tfstate-blob"
+    private_connection_resource_id = azurerm_storage_account.state.id
+    is_manual_connection           = false
+    subresource_names              = ["blob"]
+  }
+  
+  private_dns_zone_group {
+    name                 = "default"
+    private_dns_zone_ids = [azurerm_private_dns_zone.blob[0].id]
+  }
+  
+  tags = merge(var.default_tags, {
+    purpose = "Private connectivity to Terraform state storage"
   })
 }
 

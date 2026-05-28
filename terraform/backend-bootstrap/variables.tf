@@ -29,6 +29,24 @@ variable "primary_region_code" {
 variable "allow_public_access_during_setup" {
   description = "Allow public network access during initial setup (disable after private endpoint configured)"
   type        = bool
+  default     = false  # SECURITY: Changed to false per Phase 1 remediation (Finding 1.2)
+}
+
+variable "management_vnet_id" {
+  description = "VNet ID for private endpoint (required when public access disabled)"
+  type        = string
+  default     = ""
+}
+
+variable "management_subnet_id" {
+  description = "Subnet ID for private endpoint (required when public access disabled)"
+  type        = string
+  default     = ""
+}
+
+variable "enable_private_endpoint" {
+  description = "Deploy private endpoint for state storage (recommended for production)"
+  type        = bool
   default     = true
 }
 
