@@ -1,0 +1,25 @@
+variable "root_mg_id" {
+  description = "Root management group ID"
+  type        = string
+}
+
+variable "platform_mg_id" {
+  description = "Platform management group ID"
+  type        = string
+}
+
+variable "landingzones_mg_id" {
+  description = "Landing Zones management group ID"
+  type        = string
+}
+
+variable "sandbox_mg_id" {
+  description = "Sandbox management group ID"
+  type        = string
+}
+
+variable "allowed_locations" {
+  description = "List of allowed Azure regions"
+  type        = list(string)
+  default     = ["southcentralus", "northcentralus"]
+}

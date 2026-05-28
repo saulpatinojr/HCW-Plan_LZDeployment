@@ -1,0 +1,691 @@
+# TODO - Security Remediation Plan
+## Azure Landing Zone Infrastructure - Compliance Tasks
+
+**Created**: May 28, 2026  
+**Status**: 🟡 IN PROGRESS  
+**Baseline Report**: [Pre-Remediation Status](docs/compliance/PRE-REMEDIATION-STATUS-2026-05-28.md)  
+**Full Audit**: [Security Audit Report](docs/compliance/SECURITY-AUDIT-REPORT-2026-05-28.md)
+
+---
+
+## 🚨 Phase 1: Critical Remediations (0-30 days) - MANDATORY FOR PRODUCTION
+
+**Deadline**: June 27, 2026  
+**Total Effort**: 22 hours (3 days)  
+**Monthly Cost**: $1,540  
+**Risk Reduction**: 60%
+
+### Task 1.1: Service Principal RBAC Validation & Scoping
+**Priority**: 🔴 P0 - CRITICAL  
+**CVSS**: 9.1  
+**Effort**: 8 hours  
+**Cost**: $0  
+**Assignee**: [TBD]
+
+**Subtasks**:
+- [ ] Audit current service principal permissions
+  ```bash
+  az role assignment list --assignee <GITHUB_SP_CLIENT_ID> --all --output table
+  ```
+- [ ] Verify SP has only Contributor role (not Owner)
+- [ ] Remove any Owner role assignments
+- [ ] Create separate service principals per deployment layer:
+  - [ ] `sp-terraform-global-prod`
+  - [ ] `sp-terraform-connectivity-prod`
+  - [ ] `sp-terraform-management-prod`
+  - [ ] `sp-terraform-workloads-prod`
+  - [ ] `sp-terraform-sandbox-dev`
+- [ ] Assign least-privilege roles per subscription:
+  - Connectivity: Contributor on connectivity subscription only
+  - Management: Contributor on management subscription only
+  - Workloads: Contributor on prod/nonprod subscriptions only
+  - Sandbox: Contributor on sandbox subscription only
+- [ ] Update GitHub Actions secrets with new SP IDs
+- [ ] Add RBAC validation step to workflows (see Finding 1.1)
+- [ ] Document required permissions in `docs/RBAC-REQUIREMENTS.md`
+- [ ] Test deployment with restricted permissions
+
+**Acceptance Criteria**:
+- ✅ No service principal has Owner role
+- ✅ Each SP scoped to single subscription
+- ✅ RBAC validation passes in CI/CD
+- ✅ Deployment succeeds with least-privilege
+
+---
+
+### Task 1.2: Secure Terraform State Storage
+**Priority**: 🔴 P0 - CRITICAL  
+**CVSS**: 8.2  
+**Effort**: 4 hours  
+**Cost**: $40/month (private endpoint)  
+**Assignee**: [TBD]
+
+**Subtasks**:
+- [ ] Set `allow_public_access_during_setup = false` in `terraform/backend-bootstrap/variables.tf`
+- [ ] Add lifecycle precondition warning (see Finding 1.2)
+- [ ] Deploy private endpoint for state storage:
+  - [ ] Update `terraform/backend-bootstrap/main.tf`
+  - [ ] Add private endpoint resource
+  - [ ] Configure private DNS zone
+  - [ ] Link to management VNet
+- [ ] Update state storage firewall rules:
+  - [ ] Deny default
+  - [ ] Allow GitHub Actions IP ranges (if needed)
+  - [ ] Allow Azure datacenter IPs
+- [ ] Verify state access via private endpoint only
+- [ ] Test Terraform operations
+- [ ] Update deployment guide with new connection method
+
+**Acceptance Criteria**:
+- ✅ `public_network_access_enabled = false`
+- ✅ Private endpoint functional
+- ✅ Terraform state operations succeed
+- ✅ No public internet access to state storage
+
+**Files to Update**:
+- `terraform/backend-bootstrap/variables.tf`
+- `terraform/backend-bootstrap/main.tf`
+- `docs/DEPLOYMENT-GUIDE.md`
+
+---
+
+### Task 1.3: PowerShell Script Input Validation
+**Priority**: 🔴 P0 - CRITICAL  
+**CVSS**: 7.5  
+**Effort**: 2 hours  
+**Cost**: $0  
+**Assignee**: [TBD]
+
+**Subtasks**:
+- [ ] Add GUID validation to `$SandboxSubscriptionId` parameter
+- [ ] Add subscription existence check
+- [ ] Add subscription tag validation (purpose='sandbox')
+- [ ] Add dry-run confirmation requirement
+- [ ] Add resource group prefix validation (only delete rg-sandbox-*)
+- [ ] Add maximum deletion limit (fail if > 100 resources)
+- [ ] Add audit logging to Log Analytics
+- [ ] Test with invalid inputs
+- [ ] Test with production subscription (should fail)
+- [ ] Document safety features in script header
+
+**Acceptance Criteria**:
+- ✅ Invalid GUID format rejected
+- ✅ Non-sandbox subscription rejected
+- ✅ Requires explicit confirmation
+- ✅ Logs all actions to Log Analytics
+
+**File to Update**:
+- `terraform/scripts/Cleanup-ExpiredSandboxResources.ps1`
+
+---
+
+### Task 5.5: Enable Microsoft Defender for Cloud
+**Priority**: 🔴 P0 - CRITICAL  
+**Effort**: 6 hours  
+**Cost**: $1,500-$3,000/month  
+**Assignee**: [TBD]
+
+**Subtasks**:
+- [ ] Create Defender baseline module: `terraform/modules/defender-baseline/`
+- [ ] Enable Defender plans for:
+  - [ ] Virtual Machines
+  - [ ] Storage Accounts
+  - [ ] SQL Servers
+  - [ ] Kubernetes Service (AKS)
+  - [ ] Container Registry
+  - [ ] Key Vaults
+  - [ ] App Services
+- [ ] Configure security contact email
+- [ ] Enable auto-provisioning of Log Analytics agent
+- [ ] Configure workspace connection
+- [ ] Deploy across all subscriptions (global layer)
+- [ ] Verify Defender data flowing to portal
+- [ ] Review initial security recommendations
+- [ ] Configure alert rules for high/critical findings
+- [ ] Document Defender response procedures
+
+**Acceptance Criteria**:
+- ✅ Defender enabled on all 6 subscriptions
+- ✅ Security score visible in portal
+- ✅ Alerts configured
+- ✅ Security contact receiving notifications
+
+**New Module**:
+- `terraform/modules/defender-baseline/main.tf`
+- `terraform/modules/defender-baseline/variables.tf`
+- `terraform/modules/defender-baseline/outputs.tf`
+
+---
+
+### Task SEC-1: Enable GitHub Secret Scanning
+**Priority**: 🔴 P0 - CRITICAL  
+**Effort**: 2 hours  
+**Cost**: $0  
+**Assignee**: [TBD]
+
+**Subtasks**:
+- [ ] Enable in GitHub repository settings:
+  - [ ] Dependency graph
+  - [ ] Dependabot alerts
+  - [ ] Secret scanning
+  - [ ] Push protection
+- [ ] Create `.github/workflows/secrets-scan.yml` workflow
+- [ ] Add TruffleHog scan job
+- [ ] Configure scan to run on PR and push
+- [ ] Test with dummy secret (should block)
+- [ ] Add Dependabot configuration `.github/dependabot.yml`
+- [ ] Configure Dependabot for:
+  - [ ] GitHub Actions
+  - [ ] Terraform (if supported)
+- [ ] Review and merge first Dependabot PRs
+- [ ] Document secret scanning in security guide
+
+**Acceptance Criteria**:
+- ✅ Secret scanning active
+- ✅ Push protection blocks commits with secrets
+- ✅ Dependabot creates weekly PRs
+- ✅ TruffleHog scan passes
+
+**New Files**:
+- `.github/workflows/secrets-scan.yml`
+- `.github/dependabot.yml`
+
+---
+
+## 🟠 Phase 2: High Priority (30-90 days) - STRONGLY RECOMMENDED
+
+**Deadline**: August 26, 2026  
+**Total Effort**: 43 hours (5 days)  
+**Monthly Cost**: $750  
+**Risk Reduction**: 25%
+
+### Task 2.1: Implement Customer-Managed Keys (CMK)
+**Priority**: 🟠 P1 - HIGH  
+**Effort**: 16 hours  
+**Cost**: $250/month  
+**Assignee**: [TBD]
+
+**Subtasks**:
+- [ ] Create Key Vault module: `terraform/modules/keyvault-cmk/`
+- [ ] Deploy Key Vault Premium (for HSM-backed keys)
+- [ ] Configure Key Vault:
+  - [ ] Enable purge protection (required for CMK)
+  - [ ] Soft delete: 90 days
+  - [ ] Network ACLs: Deny default
+  - [ ] Private endpoint
+- [ ] Generate encryption keys:
+  - [ ] `tfstate-encryption-key` (RSA-HSM 4096)
+  - [ ] `backup-encryption-key`
+  - [ ] `storage-encryption-key`
+- [ ] Configure CMK for resources:
+  - [ ] Terraform state storage account
+  - [ ] Recovery Services Vaults
+  - [ ] Diagnostic storage accounts
+  - [ ] Flow log storage accounts
+- [ ] Add Key Vault access policies for:
+  - [ ] Automation managed identity
+  - [ ] Service principals
+  - [ ] Platform services
+- [ ] Implement key rotation policy (180 days)
+- [ ] Document key recovery procedures
+- [ ] Test backup/restore with CMK
+
+**Acceptance Criteria**:
+- ✅ All storage accounts use CMK
+- ✅ Key rotation policy active
+- ✅ Recovery procedures documented
+- ✅ Backup/restore tested successfully
+
+**New Module**:
+- `terraform/modules/keyvault-cmk/`
+
+---
+
+### Task 2.2: Enforce TLS 1.2 Globally via Azure Policy
+**Priority**: 🟠 P1 - HIGH  
+**Effort**: 4 hours  
+**Cost**: $0  
+**Assignee**: [TBD]
+
+**Subtasks**:
+- [ ] Create custom policy definition: `enforce-tls-12-minimum`
+- [ ] Add policy for resource types:
+  - [ ] Storage Accounts
+  - [ ] Azure Database for MySQL/PostgreSQL
+  - [ ] App Services
+  - [ ] Function Apps
+  - [ ] API Management
+- [ ] Assign policy at root management group
+- [ ] Set enforcement mode to Deny (not Audit)
+- [ ] Test by attempting to create resource with TLS 1.0
+- [ ] Audit existing resources for compliance
+- [ ] Document exceptions process (if needed)
+
+**Acceptance Criteria**:
+- ✅ Policy assigned at root MG
+- ✅ New resources require TLS 1.2+
+- ✅ All existing resources compliant
+- ✅ Policy blocks TLS 1.0/1.1
+
+**File to Update**:
+- `terraform/modules/policy-baseline/main.tf`
+
+---
+
+### Task 5.3: Configure Azure Firewall Threat Intelligence
+**Priority**: 🟠 P1 - HIGH  
+**Effort**: 3 hours  
+**Cost**: $0 (included with Azure Firewall)  
+**Assignee**: [TBD]
+
+**Subtasks**:
+- [ ] Create Firewall Policy resource
+- [ ] Enable threat intelligence mode: Alert
+- [ ] Configure threat intelligence allowlist (if needed)
+- [ ] Enable DNS proxy
+- [ ] For Premium tier:
+  - [ ] Enable IDPS (Intrusion Detection)
+  - [ ] Configure signature overrides
+  - [ ] Enable TLS inspection
+  - [ ] Enable URL filtering
+- [ ] Link firewall policy to firewall
+- [ ] Enable diagnostic logs for threat intel hits
+- [ ] Configure alerts for blocked threats
+- [ ] Test with known malicious IP
+- [ ] Document threat response procedures
+
+**Acceptance Criteria**:
+- ✅ Threat intelligence mode: Alert or Deny
+- ✅ Diagnostic logs enabled
+- ✅ Alerts configured
+- ✅ Test threat blocked successfully
+
+**File to Update**:
+- `terraform/modules/hub-network/main.tf`
+
+---
+
+### Task 9.2: Deploy Azure Sentinel (SIEM)
+**Priority**: 🟠 P1 - HIGH  
+**Effort**: 12 hours  
+**Cost**: $300/month (~5GB/day)  
+**Assignee**: [TBD]
+
+**Subtasks**:
+- [ ] Enable SecurityInsights solution on Log Analytics workspace
+- [ ] Configure data connectors:
+  - [ ] Azure Activity
+  - [ ] Azure Security Center
+  - [ ] Azure Firewall
+  - [ ] Azure Storage
+  - [ ] Office 365 (if applicable)
+- [ ] Enable built-in analytics rules:
+  - [ ] Suspicious resource deployment
+  - [ ] Privilege escalation
+  - [ ] Mass secret retrieval
+  - [ ] Unusual resource deletion
+- [ ] Create custom detection rules:
+  - [ ] Sandbox cleanup failures
+  - [ ] Terraform state anomalous access
+  - [ ] NSG/Firewall rule changes
+  - [ ] Policy exemption created
+- [ ] Configure incident automation:
+  - [ ] Create Logic App for incident response
+  - [ ] Integrate with ticketing system
+  - [ ] Configure email notifications
+- [ ] Create workbooks for:
+  - [ ] Security operations overview
+  - [ ] Compliance status
+  - [ ] Incident trends
+- [ ] Document incident response playbooks
+- [ ] Train SOC team on Sentinel
+
+**Acceptance Criteria**:
+- ✅ Sentinel operational
+- ✅ Data connectors flowing
+- ✅ 10+ analytics rules active
+- ✅ Incident automation working
+- ✅ Playbooks documented
+
+**File to Update**:
+- `terraform/modules/platform-management/main.tf` (add Sentinel resources)
+
+---
+
+### Task 5.2: Enable NSG Flow Logs + Traffic Analytics
+**Priority**: 🟠 P1 - HIGH  
+**Effort**: 8 hours  
+**Cost**: $200/month  
+**Assignee**: [TBD]
+
+**Subtasks**:
+- [ ] Create Network Watcher (explicit creation)
+- [ ] Create flow log storage account (separate from state)
+- [ ] Enable NSG flow logs for all NSGs:
+  - [ ] Gateway subnet NSG
+  - [ ] Firewall management NSG
+  - [ ] App subnet NSGs
+  - [ ] Management subnet NSGs
+- [ ] Configure flow log retention: 90 days
+- [ ] Enable Traffic Analytics:
+  - [ ] Link to Log Analytics workspace
+  - [ ] Interval: 10 minutes
+- [ ] Create flow log analysis queries
+- [ ] Configure alerts:
+  - [ ] Anomalous traffic patterns
+  - [ ] Denied flow spikes
+  - [ ] Lateral movement detection
+- [ ] Create Traffic Analytics dashboards
+- [ ] Document flow log analysis procedures
+
+**Acceptance Criteria**:
+- ✅ Flow logs enabled on all NSGs
+- ✅ Traffic Analytics operational
+- ✅ Alerts configured
+- ✅ Dashboards available
+
+**Files to Update**:
+- `terraform/modules/hub-network/main.tf`
+- `terraform/modules/spoke-network/main.tf`
+
+---
+
+### Task 5.1: Pin GitHub Actions to Commit SHAs
+**Priority**: 🟠 P1 - MEDIUM (supply chain security)  
+**Effort**: 2 hours  
+**Cost**: $0  
+**Assignee**: [TBD]
+
+**Subtasks**:
+- [ ] Pin `actions/checkout@v4` to SHA
+- [ ] Pin `hashicorp/setup-terraform@v3` to SHA
+- [ ] Pin `azure/login@v2` to SHA
+- [ ] Pin all other actions used in workflows
+- [ ] Add comments with version tags for reference
+- [ ] Configure Dependabot for GitHub Actions
+- [ ] Test workflows with pinned versions
+- [ ] Document action update process
+
+**Acceptance Criteria**:
+- ✅ All actions pinned to commit SHAs
+- ✅ Dependabot tracking updates
+- ✅ Workflows passing
+
+**Files to Update**:
+- `.github/workflows/terraform-plan.yml`
+- `.github/workflows/terraform-apply.yml`
+
+---
+
+## 🟡 Phase 3: Medium Priority (90-180 days) - COMPLIANCE & BEST PRACTICES
+
+**Deadline**: November 24, 2026  
+**Total Effort**: 60 hours (8 days)  
+**Monthly Cost**: $350  
+**Risk Reduction**: 10%
+
+### Task 9.3: Configure Security Alerting
+**Priority**: 🟡 P2 - MEDIUM  
+**Effort**: 8 hours  
+**Cost**: $0
+
+**Subtasks**:
+- [ ] Create Security action group
+- [ ] Configure activity log alerts:
+  - [ ] Policy assignment changes
+  - [ ] Role assignment changes (privileged)
+  - [ ] Resource deletions (production)
+  - [ ] NSG rule modifications
+  - [ ] Firewall rule changes
+  - [ ] Management group changes
+- [ ] Configure metric alerts:
+  - [ ] Azure Firewall threats blocked
+  - [ ] NSG flow anomalies
+  - [ ] Storage account access failures
+  - [ ] Key Vault access denied
+- [ ] Test alert delivery
+- [ ] Document alert response procedures
+
+**Files to Update**:
+- `terraform/modules/platform-management/main.tf`
+
+---
+
+### Task AB-3: Add Resource Locks
+**Priority**: 🟡 P2 - MEDIUM  
+**Effort**: 4 hours  
+**Cost**: $0
+
+**Subtasks**:
+- [ ] Add CanNotDelete locks on:
+  - [ ] Hub VNets
+  - [ ] Azure Firewall
+  - [ ] Log Analytics workspace
+  - [ ] Key Vault
+  - [ ] Recovery Services Vault
+- [ ] Add ReadOnly lock on state storage (conditional)
+- [ ] Document lock removal procedures
+- [ ] Test deployment with locks in place
+
+**Files to Update**:
+- `terraform/modules/hub-network/main.tf`
+- `terraform/modules/platform-management/main.tf`
+- `terraform/backend-bootstrap/main.tf`
+
+---
+
+### Task 9.1: Comprehensive Diagnostic Logging
+**Priority**: 🟡 P2 - MEDIUM  
+**Effort**: 6 hours  
+**Cost**: $100/month (Log Analytics ingestion)
+
+**Subtasks**:
+- [ ] Add diagnostic settings for:
+  - [ ] All NSGs (events + rule counters)
+  - [ ] Azure Firewall (app, network, DNS logs)
+  - [ ] VNets (activity logs)
+  - [ ] Public IPs (connection logs)
+  - [ ] Route tables (changes)
+  - [ ] Recovery Services Vaults (backup events)
+  - [ ] Automation Account (runbook execution)
+  - [ ] Key Vault (access logs)
+- [ ] Configure subscription-level activity log export
+- [ ] Test log queries for each resource type
+
+**Files to Update**:
+- All module `main.tf` files
+
+---
+
+### Task AB-2: Backup Testing Automation
+**Priority**: 🟡 P2 - MEDIUM  
+**Effort**: 12 hours  
+**Cost**: $0
+
+**Subtasks**:
+- [ ] Create backup test runbook
+- [ ] Implement automated restore tests:
+  - [ ] Terraform state recovery
+  - [ ] Log Analytics configuration backup
+  - [ ] Key Vault key recovery
+- [ ] Configure test schedule (monthly)
+- [ ] Create test validation checks
+- [ ] Document manual recovery procedures
+- [ ] Store backup verification reports
+
+**New Files**:
+- `terraform/scripts/Test-BackupRecovery.ps1`
+- `docs/day2/backup-recovery-procedures.md`
+
+---
+
+### Task AB-1: Private Endpoints for Platform Services
+**Priority**: 🟡 P2 - MEDIUM  
+**Effort**: 10 hours  
+**Cost**: $120/month (3 additional endpoints)
+
+**Subtasks**:
+- [ ] Add private endpoints for:
+  - [ ] Log Analytics workspace
+  - [ ] Recovery Services Vault
+  - [ ] Automation Account
+  - [ ] Key Vault (if not already done)
+- [ ] Configure private DNS zones
+- [ ] Update firewall rules to deny public access
+- [ ] Test connectivity via private endpoints
+- [ ] Update documentation
+
+**Files to Update**:
+- `terraform/modules/platform-management/main.tf`
+
+---
+
+### Task 2.3: VM Disk Encryption Policy
+**Priority**: 🟡 P2 - MEDIUM  
+**Effort**: 4 hours  
+**Cost**: $0
+
+**Subtasks**:
+- [ ] Create policy: require-vm-disk-encryption
+- [ ] Assign at Platform management group
+- [ ] Create VM deployment module with encryption built-in
+- [ ] Document encryption requirements
+- [ ] Create Azure Disk Encryption Sets with CMK
+
+**Files**:
+- `terraform/modules/policy-baseline/main.tf`
+- `terraform/modules/compute-vm/` (new module)
+
+---
+
+### Remaining Medium Priority Tasks
+- [ ] **Finding 3.1**: Enhanced error handling in PowerShell (4h)
+- [ ] **Finding AB-4**: Policy remediation tasks (6h)
+- [ ] **Finding CIS-2**: Guest user review automation (4h)
+- [ ] **Finding CIS-5**: Subscription activity log export (2h)
+
+---
+
+## 🟢 Phase 4: Low Priority (Ongoing) - OPTIMIZATION
+
+**Timeline**: Continuous improvement  
+**Total Effort**: 40 hours (5 days)  
+**Monthly Cost**: $0  
+**Risk Reduction**: 5%
+
+### Documentation & Accessibility
+- [ ] **WCAG-4**: Add text alternatives for Mermaid diagrams (2h)
+- [ ] **WCAG-3**: Improve link text descriptions (1h)
+- [ ] **WCAG-2**: Add language identifiers to code blocks (1h)
+- [ ] **W3C-1**: Run markdownlint and fix issues (2h)
+
+### Infrastructure Hardening
+- [ ] **SEC-2**: Immutable infrastructure tags (4h)
+- [ ] **SEC-3**: Break-glass account documentation (4h)
+- [ ] **SEC-4**: Tagging consistency improvements (4h)
+- [ ] **SEC-5**: State encryption validation script (2h)
+
+### Operational Excellence
+- [ ] **Finding 8.1**: State lock verification (2h)
+- [ ] **Finding 8.2**: Terraform plan integrity checks (2h)
+- [ ] **Finding CIS-1**: MFA enforcement documentation (4h)
+- [ ] **Finding CIS-6**: Network Watcher explicit creation (2h)
+
+### Testing & Validation
+- [ ] Create integration test suite for deployments (8h)
+- [ ] Implement automated compliance scanning (4h)
+- [ ] Create disaster recovery drill procedures (4h)
+
+---
+
+## 📊 Progress Tracking
+
+### Overall Status
+
+| Phase | Status | Complete | Total | % Done | Deadline |
+|---|---|---|---|---|---|
+| Phase 1 | 🟡 Not Started | 0 | 5 | 0% | June 27, 2026 |
+| Phase 2 | ⚪ Blocked | 0 | 6 | 0% | August 26, 2026 |
+| Phase 3 | ⚪ Blocked | 0 | 10 | 0% | November 24, 2026 |
+| Phase 4 | ⚪ Blocked | 0 | 15 | 0% | Ongoing |
+| **TOTAL** | 🟡 **0%** | **0** | **36** | **0%** | - |
+
+### Critical Path (Must Complete First)
+1. Task 1.1 (RBAC) → Blocks all deployment tasks
+2. Task 1.2 (State storage) → Blocks Terraform operations
+3. Task 1.3 (PowerShell) → Blocks sandbox automation
+4. Task 5.5 (Defender) → Blocks security visibility
+5. Task SEC-1 (Secret scanning) → Blocks secure commits
+
+### Dependencies
+- Phase 2 requires Phase 1 completion
+- Phase 3 requires Phase 1-2 completion
+- CMK (Task 2.1) required before private endpoints (Task AB-1)
+- Sentinel (Task 9.2) requires Defender (Task 5.5)
+
+---
+
+## 📈 Key Performance Indicators (KPIs)
+
+Track these metrics to measure remediation progress:
+
+| KPI | Baseline | Phase 1 Target | Phase 2 Target | Phase 3 Target |
+|---|---|---|---|---|
+| Critical Findings Open | 3 | 0 | 0 | 0 |
+| High Findings Open | 12 | 3 | 0 | 0 |
+| Azure Secure Score | Unknown | 70% | 80% | 85% |
+| OWASP Compliance | 30% | 75% | 85% | 90% |
+| CIS Compliance | 40% | 60% | 75% | 85% |
+| Private Endpoint Coverage | 0% | 25% | 50% | 100% |
+| Monthly Security Cost | $30 | $1,570 | $2,320 | $2,670 |
+
+---
+
+## 🔄 Review Schedule
+
+- **Daily**: Phase 1 standups (during Phase 1)
+- **Weekly**: Security working group meeting
+- **Bi-weekly**: Executive status update
+- **Monthly**: Compliance posture review
+- **Quarterly**: External security assessment
+
+---
+
+## 📚 Reference Documentation
+
+- [Pre-Remediation Baseline](docs/compliance/PRE-REMEDIATION-STATUS-2026-05-28.md)
+- [Full Security Audit](docs/compliance/SECURITY-AUDIT-REPORT-2026-05-28.md)
+- [Executive Summary](docs/compliance/EXECUTIVE-SUMMARY-2026-05-28.md)
+- [Quick Action Checklist](docs/compliance/QUICK-ACTION-CHECKLIST.md)
+- [Deployment Guide](docs/DEPLOYMENT-GUIDE.md)
+- [Project Summary](docs/PROJECT-SUMMARY.md)
+
+---
+
+## 📝 Notes
+
+**Last Updated**: May 28, 2026  
+**Owner**: Platform Engineering Team  
+**Approvers**: Security Team, Compliance Officer, CISO  
+**Next Review**: June 1, 2026 (Kick-off meeting)
+
+---
+
+## ✅ Task Completion Template
+
+When completing a task, update with:
+
+```markdown
+- [x] Task X.X: Task Name
+  - Completed: YYYY-MM-DD
+  - Completed by: [Name]
+  - PR/Commit: [link]
+  - Verification: [test results]
+  - Notes: [any issues or learnings]
+```
+
+---
+
+**Document Version**: 1.0  
+**Status**: APPROVED ✅  
+**Next Action**: Schedule Phase 1 kick-off meeting

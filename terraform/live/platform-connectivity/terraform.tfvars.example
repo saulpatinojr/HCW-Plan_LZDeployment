@@ -1,0 +1,39 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+connectivity_subscription_id = "00000000-0000-0000-0000-000000000000"
+
+primary_region      = "southcentralus"
+primary_region_code = "scus"
+dr_region           = "northcentralus"
+dr_region_code      = "ncus"
+
+# Hub address spaces (non-overlapping)
+primary_hub_address_space = "10.0.0.0/16"
+dr_hub_address_space      = "10.10.0.0/16"
+
+# Firewall selection: azfw, palo, or fortinet
+firewall_type = "azfw"
+azfw_tier     = "Standard"
+
+# If using NVA (palo or fortinet), set placeholder IPs
+primary_nva_trust_ip = "10.0.1.4"
+dr_nva_trust_ip      = "10.10.1.4"
+
+# Placeholders
+deploy_bastion = true
+deploy_dns     = true
+
+# Management access (restrict in production)
+management_ip_ranges = "*"
+
+# Availability zones
+primary_availability_zones = ["1", "2", "3"]
+dr_availability_zones      = ["1", "2", "3"]
+
+default_tags = {
+  owner       = "Platform Team"
+  application = "Landing Zone Connectivity"
+  environment = "prod"
+  cost_center = "IT-Platform"
+  managed_by  = "Terraform"
+}

@@ -1,0 +1,17 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+management_subscription_id = "00000000-0000-0000-0000-000000000000"  # Replace with your Management subscription ID
+org_prefix                 = "hcw"
+primary_region             = "southcentralus"
+primary_region_code        = "scus"
+
+# Set to false after private endpoint configured
+allow_public_access_during_setup = true
+
+default_tags = {
+  owner       = "Platform Team"
+  application = "Landing Zone Infrastructure"
+  environment = "prod"
+  cost_center = "IT-Platform"
+  managed_by  = "Terraform"
+}

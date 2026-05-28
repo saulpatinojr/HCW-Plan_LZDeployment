@@ -1,0 +1,45 @@
+variable "management_subscription_id" {
+  description = "Subscription ID for the Management subscription where state will be stored"
+  type        = string
+}
+
+variable "org_prefix" {
+  description = "Organization prefix for resource naming (e.g., 'hcw')"
+  type        = string
+  default     = "hcw"
+  
+  validation {
+    condition     = can(regex("^[a-z]{2,4}$", var.org_prefix))
+    error_message = "Organization prefix must be 2-4 lowercase letters."
+  }
+}
+
+variable "primary_region" {
+  description = "Primary Azure region"
+  type        = string
+  default     = "southcentralus"
+}
+
+variable "primary_region_code" {
+  description = "Short code for primary region"
+  type        = string
+  default     = "scus"
+}
+
+variable "allow_public_access_during_setup" {
+  description = "Allow public network access during initial setup (disable after private endpoint configured)"
+  type        = bool
+  default     = true
+}
+
+variable "default_tags" {
+  description = "Default tags to apply to all resources"
+  type        = map(string)
+  default = {
+    owner       = "Platform Team"
+    application = "Landing Zone Infrastructure"
+    environment = "prod"
+    cost_center = "IT-Platform"
+    managed_by  = "Terraform"
+  }
+}

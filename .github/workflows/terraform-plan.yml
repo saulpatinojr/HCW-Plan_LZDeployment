@@ -1,0 +1,146 @@
+name: Terraform Plan
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-*.yml'
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  ARM_USE_OIDC: true
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+jobs:
+  detect-changes:
+    name: Detect Changed Layers
+    runs-on: ubuntu-latest
+    outputs:
+      layers: ${{ steps.detect.outputs.layers }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Detect changed layers
+        id: detect
+        run: |
+          # Detect which Terraform layers changed
+          CHANGED_FILES=$(git diff --name-only origin/main...HEAD | grep '^terraform/live/' || true)
+          
+          LAYERS=()
+          if echo "$CHANGED_FILES" | grep -q 'terraform/live/global/'; then
+            LAYERS+=("global")
+          fi
+          if echo "$CHANGED_FILES" | grep -q 'terraform/live/platform-connectivity/'; then
+            LAYERS+=("platform-connectivity")
+          fi
+          if echo "$CHANGED_FILES" | grep -q 'terraform/live/platform-management/'; then
+            LAYERS+=("platform-management")
+          fi
+          if echo "$CHANGED_FILES" | grep -q 'terraform/live/workloads-prod/'; then
+            LAYERS+=("workloads-prod")
+          fi
+          if echo "$CHANGED_FILES" | grep -q 'terraform/live/sandbox/'; then
+            LAYERS+=("sandbox")
+          fi
+          
+          # Convert array to JSON
+          LAYERS_JSON=$(printf '%s\n' "${LAYERS[@]}" | jq -R . | jq -s -c .)
+          echo "layers=$LAYERS_JSON" >> $GITHUB_OUTPUT
+          echo "Changed layers: $LAYERS_JSON"
+
+  terraform-plan:
+    name: Plan ${{ matrix.layer }}
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.layers != '[]'
+    strategy:
+      matrix:
+        layer: ${{ fromJson(needs.detect-changes.outputs.layers) }}
+      fail-fast: false
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+      
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Terraform Format Check
+        working-directory: terraform/live/${{ matrix.layer }}
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+      
+      - name: Terraform Init
+        working-directory: terraform/live/${{ matrix.layer }}
+        run: terraform init -backend-config=backend.hcl
+      
+      - name: Terraform Validate
+        working-directory: terraform/live/${{ matrix.layer }}
+        run: terraform validate
+      
+      - name: Terraform Plan
+        working-directory: terraform/live/${{ matrix.layer }}
+        id: plan
+        run: |
+          terraform plan -input=false -no-color -out=tfplan
+          terraform show -no-color tfplan > plan.txt
+        continue-on-error: true
+      
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ matrix.layer }}
+          path: terraform/live/${{ matrix.layer }}/tfplan
+          retention-days: 30
+      
+      - name: Comment PR with Plan
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            const planPath = 'terraform/live/${{ matrix.layer }}/plan.txt';
+            const plan = fs.readFileSync(planPath, 'utf8');
+            const truncatedPlan = plan.length > 65000 ? plan.substring(0, 65000) + '\n\n... (truncated)' : plan;
+            
+            const output = `### Terraform Plan: \`${{ matrix.layer }}\`
+            
+            #### Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Plan 📖\`${{ steps.plan.outcome }}\`
+            
+            <details><summary>Show Plan</summary>
+            
+            \`\`\`terraform
+            ${truncatedPlan}
+            \`\`\`
+            
+            </details>
+            
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
