@@ -532,7 +532,6 @@ function Step-CommitAndPR([hashtable]$State) {
             git checkout -b $branchName 2>&1 | Out-Null
         }
 
-        $deploymentFolder = $State['deploymentFolder']
         $deploymentName = $State['deploymentName']
         $relDeploymentPath = "deployments/$deploymentName"
         

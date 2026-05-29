@@ -145,15 +145,18 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
       - name: Terraform Format Check
+        id: fmt
         working-directory: terraform/live/${{ matrix.layer }}
         run: terraform fmt -check -recursive
         continue-on-error: true
       
       - name: Terraform Init
+        id: init
         working-directory: terraform/live/${{ matrix.layer }}
         run: terraform init -backend-config=backend.hcl
       
       - name: Terraform Validate
+        id: validate
         working-directory: terraform/live/${{ matrix.layer }}
         run: terraform validate
       

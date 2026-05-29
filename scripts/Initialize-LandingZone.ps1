@@ -137,8 +137,8 @@ if (-not $RepoName) {
     Write-Host ""
     Write-Host "  Enter GitHub repository name (or press ENTER for default):" -ForegroundColor Yellow
     Write-Host "  Suggested: $suggestedName" -ForegroundColor Gray
-    $input = Read-Host "  Repo name"
-    $RepoName = if ($input) { $input } else { $suggestedName }
+    $userInput = Read-Host "  Repo name"
+    $RepoName = if ($userInput) { $userInput } else { $suggestedName }
 }
 
 # Validate repo name follows GitHub conventions
@@ -656,7 +656,7 @@ if ($branchProtection -eq '1') {
     Write-Host "══════════════════════════════════════════════════════════" -ForegroundColor Cyan
     Write-Host ""
     
-    $done = Read-Host "  Press ENTER once branch protection is configured..."
+    [void](Read-Host "  Press ENTER once branch protection is configured...")
     Write-OK "Branch protection configuration acknowledged"
     
     # Verify ruleset was created
