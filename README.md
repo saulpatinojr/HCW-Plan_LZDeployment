@@ -1,20 +1,52 @@
-# Azure Landing Zone - Implementation Blueprint
+# Azure Landing Zone Bootstrap Toolkit
 
 ## Overview
 
-This repository contains a **production-ready Azure Landing Zone** designed for rapid deployment with minimal follow-up. It implements Azure best practices for governance, networking, security, and operations using Infrastructure as Code (Terraform) and automated CI/CD (GitHub Actions).
+This repository contains **automated bootstrap scripts and tools** for rapidly deploying production-ready Azure Landing Zones with GitHub Actions OIDC authentication. This is a **toolkit repository** - the scripts in this repo will create your actual landing zone deployment in a **separate customer repository**.
+
+**🎯 Repository Purpose**: Bootstrap tooling and automation scripts  
+**❌ Not Included**: Actual landing zone deployment files (those go in your customer-specific repo)
 
 **Key Features**:
-- ✅ Dual-region hub-and-spoke architecture (primary + DR)
-- ✅ Choice of firewall: Azure Firewall, Palo Alto, or Fortinet
-- ✅ Automated sandbox resource cleanup (30-day expiry)
-- ✅ Policy-driven governance with Azure Policy
-- ✅ GitOps workflow with PR-based approval gates
-- ✅ Comprehensive Day 2 operational documentation for junior administrators
+- ✅ Automated GitHub repository creation with proper naming
+- ✅ Azure OIDC authentication setup (no stored secrets)
+- ✅ Automatic PR creation and workflow triggering
+- ✅ Branch protection (GitHub Rulesets) configuration
+- ✅ Comprehensive documentation and decision tracking
+- ✅ Two bootstrap approaches: automated (new users) and traditional (existing repos)
 
 ---
 
-## Architecture
+## What Gets Created in Your Customer Repository
+
+When you run the bootstrap scripts, a **separate customer-specific repository** is created with:
+
+```
+your-company-azure-landing-zone/          # Your customer repo (NOT this one)
+├── deployments/
+│   └── hcw-<tenant-suffix>/
+│       ├── .github/
+│       │   ├── workflows/
+│       │   │   ├── terraform-plan.yml
+│       │   │   ├── terraform-apply.yml
+│       │   │   └── azure-auth-test.yml
+│       │   └── CODEOWNERS
+│       ├── outputs/                       # Terraform outputs from deployments
+│       └── scripts/                       # Deployment-specific scripts
+├── terraform/                             # Copied from this toolkit
+│   ├── backend-bootstrap/
+│   ├── modules/
+│   └── live/
+└── docs/                                  # Deployment documentation
+```
+
+**This toolkit repository** contains the bootstrap scripts and templates that create your customer repository.
+
+---
+
+## Architecture (Deployed in Customer Repository)
+
+The bootstrap scripts set up a landing zone with this architecture in your **customer repository**:
 
 ```mermaid
 graph TB
@@ -101,16 +133,89 @@ HCW-Demo-LZDeployment/
 
 ---
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 - Azure CLI 2.60+
 - Terraform 1.9+
-- 6 Azure subscriptions (Identity, Connectivity, Management, Prod, NonProd, Sandbox)
+- GitHub CLI 2.40+
+- Git 2.30+
 - Owner/User Access Administrator at tenant root
-- GitHub repository with Actions enabled
+- Azure subscription(s)
 
-### Quick Start
+### Bootstrap Options
+
+Choose the approach that best fits your scenario:
+
+#### Option 1: Automated Setup (Recommended for New Users) 🌟
+
+**Perfect for:**
+- Empty GitHub account or starting fresh
+- Fastest path to working deployment (5-7 minutes)
+- Maximum automation with minimal manual steps
+- Demo or workshop scenarios
+
+```powershell
+# One command to set everything up
+.\scripts\Initialize-LandingZone.ps1
+
+# Follow prompts:
+#  • Org prefix: "contoso"
+#  • Repo name: "contoso-azure-landing-zone"
+#  • Visibility: private
+#  • Automatic PR creation ✅
+#  • Optional automatic workflow trigger ✅
+```
+
+**What it does:**
+1. ✅ Creates GitHub repository with user-friendly name
+2. ✅ Initializes with README and main branch
+3. ✅ Sets up Azure OIDC authentication
+4. ✅ Creates CODEOWNERS and workflows
+5. ✅ Automatically creates and pushes PR
+6. ✅ Optionally triggers auth test workflow after merge
+
+**Result:** Repository created, Azure configured, PR ready, workflow validated - all in ~7 minutes.
+
+[📖 Read detailed comparison →](docs/bootstrap/BOOTSTRAP-APPROACH-COMPARISON.md)
+
+---
+
+#### Option 2: Traditional Setup (For Existing Repositories)
+
+**Perfect for:**
+- You already have a GitHub repository
+- You want full control over each step
+- Adding Landing Zone to existing codebase
+- Custom Git workflows or team processes
+
+```powershell
+# Run bootstrap in existing repo
+.\scripts\Start-Bootstrap.ps1
+
+# Then manually:
+#  1. Create branch: bootstrap/initial-setup
+#  2. Commit files
+#  3. Push branch
+#  4. Create PR via web UI
+#  5. Merge PR
+#  6. Trigger workflow manually
+```
+
+**What it does:**
+1. ✅ Sets up Azure OIDC authentication
+2. ✅ Creates CODEOWNERS and workflows in deployment folder
+3. ⏸️  User handles Git operations
+4. ⏸️  User creates PR manually
+5. ⏸️  User triggers workflow after merge
+
+**Result:** Azure configured, files ready for commit - takes ~15-20 minutes with manual steps.
+
+[📖 Read detailed comparison →](docs/bootstrap/BOOTSTRAP-APPROACH-COMPARISON.md)
+
+---
+
+### Quick Start (After Bootstrap)
 
 1. **Clone and review**:
    ```powershell

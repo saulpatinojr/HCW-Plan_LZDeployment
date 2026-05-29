@@ -38,3 +38,6 @@ terraform.rc
 
 # Deployment options configuration (user-specific)
 .azure/deployment-options.yaml
+
+# Bootstrap state (contains tenant/subscription IDs and app client IDs)
+.bootstrap-state.json

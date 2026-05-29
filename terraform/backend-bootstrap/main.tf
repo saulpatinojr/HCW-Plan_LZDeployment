@@ -55,8 +55,8 @@ resource "azurerm_storage_account" "state" {
   account_replication_type = "RAGZRS"
   account_kind             = "StorageV2"
   
-  min_tls_version          = "TLS1_2"
-  enable_https_traffic_only = true
+  min_tls_version           = "TLS1_2"
+  https_traffic_only_enabled = true
   
   # Security - CRITICAL: Public access disabled by default (Finding 1.2 - CVSS 8.2)
   public_network_access_enabled = var.allow_public_access_during_setup
@@ -158,7 +158,7 @@ resource "azurerm_storage_container" "state_containers" {
   ])
   
   name                  = each.key
-  storage_account_name  = azurerm_storage_account.state.name
+  storage_account_id    = azurerm_storage_account.state.id
   container_access_type = "private"
 }
 
@@ -191,7 +191,4 @@ resource "azurerm_monitor_diagnostic_setting" "state" {
     category = "StorageDelete"
   }
   
-  metric {
-    category = "Transaction"
-  }
 }

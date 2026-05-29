@@ -1,14 +1,43 @@
-# Project Summary: Azure Landing Zone Implementation
+# Project Summary: Azure Landing Zone Bootstrap Toolkit
 
-## What Was Delivered
+## What This Repository Provides
 
-This repository contains a **complete, production-ready Azure Landing Zone** that can be handed to an engineer and deployed with minimal follow-up. The implementation follows your exact specifications for a lean, opinionated, standardized design aligned with Azure CAF best practices.
+This repository contains **automated bootstrap scripts and tooling** for creating production-ready Azure Landing Zone deployments. This is a **toolkit repository** that contains scripts to set up your actual landing zone in a **separate customer-specific repository**.
+
+**🎯 This Repo Contains:**
+- Bootstrap automation scripts (`Initialize-LandingZone.ps1`, `Start-Bootstrap.ps1`)
+- Landing zone Terraform modules and templates
+- GitHub Actions workflow templates
+- Comprehensive documentation and guides
+
+**❌ This Repo Does NOT Contain:**
+- Your actual deployment files (those are created in your customer repo)
+- Customer-specific configuration
+- Deployment state files
+- Production secrets or credentials
 
 ---
 
-## ✅ Deliverables Checklist
+## ✅ Toolkit Components
 
-### Infrastructure as Code (Terraform)
+### Bootstrap Scripts
+
+- [x] **Initialize-LandingZone.ps1** (Automated Approach)
+  - Creates GitHub repository with user-friendly naming
+  - Sets up Azure OIDC authentication (no secrets)
+  - Automatically creates PR with workflow files
+  - Optional automatic workflow triggering
+  - Optional branch protection setup
+  - **Perfect for new customers starting from scratch**
+
+- [x] **Start-Bootstrap.ps1** (Traditional Approach)
+  - Azure OIDC setup in existing repository
+  - Creates deployment folder structure
+  - Generates CODEOWNERS and workflow files
+  - Manual Git operations and PR creation
+  - **Perfect for existing repositories**
+
+### Infrastructure as Code Templates (Terraform)
 
 - [x] **Backend Bootstrap** (4 files)
   - One-time state storage account setup
@@ -31,7 +60,7 @@ This repository contains a **complete, production-ready Azure Landing Zone** tha
   - `workloads-prod`: Production spokes in both regions
   - `sandbox`: Air-gapped isolated environment with auto-expiry
 
-### CI/CD Automation (GitHub Actions)
+### CI/CD Workflow Templates (GitHub Actions)
 
 - [x] **terraform-plan.yml**
   - Triggers on PR to detect changed layers
@@ -45,6 +74,11 @@ This repository contains a **complete, production-ready Azure Landing Zone** tha
   - Environment-based approval gates (production environment)
   - Uploads outputs as artifacts
   - OIDC authentication (no secrets stored)
+
+- [x] **azure-auth-test.yml**
+  - Manual workflow to validate OIDC authentication
+  - Verifies Azure connection and RBAC roles
+  - Runs after bootstrap to confirm setup
 
 ### Day 2 Operational Documentation
 
