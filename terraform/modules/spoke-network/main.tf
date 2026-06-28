@@ -120,7 +120,7 @@ resource "azurerm_route_table" "app" {
   name                          = "udr-${var.spoke_name}-app-${var.region_code}-${var.environment}-01"
   resource_group_name           = azurerm_resource_group.spoke.name
   location                      = azurerm_resource_group.spoke.location
-  disable_bgp_route_propagation = true
+  bgp_route_propagation_enabled = false
   tags                          = var.tags
   
   route {
@@ -143,7 +143,7 @@ resource "azurerm_route_table" "data" {
   name                          = "udr-${var.spoke_name}-data-${var.region_code}-${var.environment}-01"
   resource_group_name           = azurerm_resource_group.spoke.name
   location                      = azurerm_resource_group.spoke.location
-  disable_bgp_route_propagation = true
+  bgp_route_propagation_enabled = false
   tags                          = var.tags
   
   route {

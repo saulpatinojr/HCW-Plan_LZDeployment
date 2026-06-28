@@ -89,7 +89,7 @@ resource "azurerm_network_watcher_flow_log" "nsg_flow_logs" {
   name                 = "fl-${each.key}-${var.environment}"
   network_watcher_name = data.azurerm_network_watcher.main.name
   resource_group_name  = data.azurerm_network_watcher.main.resource_group_name
-  network_security_group_id = each.value
+  target_resource_id     = each.value
   storage_account_id   = azurerm_storage_account.flow_logs.id
   enabled              = true
   version              = 2  # Version 2 provides more detailed flow information
@@ -124,30 +124,14 @@ resource "azurerm_monitor_diagnostic_setting" "flow_logs_storage" {
 
   enabled_log {
     category_group = "audit"
-
-    retention_policy {
-      enabled = true
-      days    = var.log_retention_days
-    }
   }
 
   enabled_log {
     category_group = "allLogs"
-
-    retention_policy {
-      enabled = true
-      days    = var.log_retention_days
-    }
   }
 
-  metric {
+  enabled_metric {
     category = "AllMetrics"
-    enabled  = true
-
-    retention_policy {
-      enabled = true
-      days    = var.log_retention_days
-    }
   }
 }
 
@@ -228,32 +212,6 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "denied_traffic_alert"
   }
 
   tags = var.tags
-}
-
-# Output
-output "storage_account_id" {
-  description = "ID of the flow logs storage account"
-  value       = azurerm_storage_account.flow_logs.id
-}
-
-output "storage_account_name" {
-  description = "Name of the flow logs storage account"
-  value       = azurerm_storage_account.flow_logs.name
-}
-
-output "flow_log_ids" {
-  description = "Map of NSG names to flow log IDs"
-  value       = { for k, v in azurerm_network_watcher_flow_log.nsg_flow_logs : k => v.id }
-}
-
-output "traffic_analytics_enabled" {
-  description = "Whether Traffic Analytics is enabled"
-  value       = var.enable_traffic_analytics
-}
-
-output "flow_log_retention_days" {
-  description = "Number of days flow logs are retained"
-  value       = var.flow_log_retention_days
 }
 
 output "next_steps" {

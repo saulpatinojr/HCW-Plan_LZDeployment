@@ -116,7 +116,7 @@ jobs:
             **Compliance:** ${{ github.event.inputs.compliance_variant }}
             **Primary Region:** ${{ github.event.inputs.primary_region }}
             **Secondary Region:** ${{ github.event.inputs.secondary_region }}
-            **Created:** ${{ github.event.timestamp }}
+            **Created Run ID:** ${{ github.run_id }}
 
             ## Next Steps
 

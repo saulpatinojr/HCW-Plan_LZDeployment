@@ -38,6 +38,7 @@ module "policy_baseline" {
   source = "../../modules/policy-baseline"
   
   root_mg_id         = module.management_groups.root_mg_id
+  root_management_group_id = module.management_groups.root_mg_id
   platform_mg_id     = module.management_groups.platform_mg_id
   landingzones_mg_id = module.management_groups.landingzones_mg_id
   sandbox_mg_id      = module.management_groups.sandbox_mg_id

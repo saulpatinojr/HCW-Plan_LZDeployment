@@ -111,14 +111,8 @@ resource "azurerm_monitor_diagnostic_setting" "firewall_policy" {
   # Firewall Policy logs - currently limited logs for policy itself
   # Most logs come from the firewall resource
 
-  metric {
+  enabled_metric {
     category = "AllMetrics"
-    enabled  = true
-
-    retention_policy {
-      enabled = true
-      days    = var.log_retention_days
-    }
   }
 }
 
@@ -131,39 +125,19 @@ resource "azurerm_monitor_diagnostic_setting" "firewall_threat_intel" {
 
   enabled_log {
     category = "AzureFirewallApplicationRule"
-
-    retention_policy {
-      enabled = true
-      days    = var.log_retention_days
-    }
   }
 
   enabled_log {
     category = "AzureFirewallNetworkRule"
-
-    retention_policy {
-      enabled = true
-      days    = var.log_retention_days
-    }
   }
 
   enabled_log {
     category = "AzureFirewallDnsProxy"
-
-    retention_policy {
-      enabled = true
-      days    = var.log_retention_days
-    }
   }
 
   # Threat Intelligence logs
   enabled_log {
     category = "AZFWThreatIntel"
-
-    retention_policy {
-      enabled = true
-      days    = var.log_retention_days
-    }
   }
 
   # IDPS logs (Premium SKU only)
@@ -171,22 +145,11 @@ resource "azurerm_monitor_diagnostic_setting" "firewall_threat_intel" {
     for_each = var.azfw_tier == "Premium" ? [1] : []
     content {
       category = "AZFWIdpsSignature"
-
-      retention_policy {
-        enabled = true
-        days    = var.log_retention_days
-      }
     }
   }
 
-  metric {
+  enabled_metric {
     category = "AllMetrics"
-    enabled  = true
-
-    retention_policy {
-      enabled = true
-      days    = var.log_retention_days
-    }
   }
 }
 

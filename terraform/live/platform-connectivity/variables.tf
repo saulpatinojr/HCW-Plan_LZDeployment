@@ -97,6 +97,12 @@ variable "dr_availability_zones" {
   default     = ["1", "2", "3"]
 }
 
+variable "log_analytics_workspace_id" {
+  description = "Log Analytics workspace resource ID for hub diagnostics"
+  type        = string
+  default     = ""
+}
+
 variable "default_tags" {
   description = "Default tags to apply to all resources"
   type        = map(string)

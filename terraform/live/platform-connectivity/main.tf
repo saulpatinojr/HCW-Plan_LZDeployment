@@ -41,6 +41,7 @@ module "hub_primary" {
   deploy_dns_placeholder    = var.deploy_dns
   management_ip_ranges      = var.management_ip_ranges
   availability_zones        = var.primary_availability_zones
+  log_analytics_workspace_id = var.log_analytics_workspace_id
   tags                      = local.common_tags
 }
 
@@ -59,6 +60,7 @@ module "hub_dr" {
   deploy_dns_placeholder    = var.deploy_dns
   management_ip_ranges      = var.management_ip_ranges
   availability_zones        = var.dr_availability_zones
+  log_analytics_workspace_id = var.log_analytics_workspace_id
   tags                      = local.common_tags
 }
 

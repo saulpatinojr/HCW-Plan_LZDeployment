@@ -40,17 +40,6 @@ resource "azurerm_automation_account" "alz" {
   tags = var.tags
 }
 
-# Link Log Analytics to Automation Account for integrated monitoring
-resource "azurerm_log_analytics_linked_service" "alz" {
-  resource_group_name = azurerm_resource_group.management.name
-  workspace_id        = azurerm_log_analytics_workspace.alz.id
-  linked_service_name = "Automation"
-
-  linked_service_properties {
-    resource_id = azurerm_automation_account.alz.id
-  }
-}
-
 # Application Insights - For application-level monitoring
 resource "azurerm_application_insights" "alz" {
   name                = "appi-${var.org_prefix}-${var.region_code}"
@@ -76,18 +65,18 @@ resource "azurerm_monitor_metric_alert" "cpu_high" {
   name                = "alert-cpu-${var.org_prefix}"
   resource_group_name = azurerm_resource_group.management.name
   scopes              = [azurerm_log_analytics_workspace.alz.id]
-  description         = "Alert when CPU exceeds 80%"
+  description         = "Alert when workspace ingestion volume exceeds threshold"
   severity            = 2
   enabled             = true
   frequency           = "PT5M"
   window_size         = "PT15M"
-  aggregation         = "Average"
 
   criteria {
-    metric_name      = "\\Processor(_Total)\\% Processor Time"
-    metric_namespace = "Microsoft.Compute/virtualMachines"
+    metric_name      = "Data Ingestion"
+    metric_namespace = "Microsoft.OperationalInsights/workspaces"
+    aggregation      = "Total"
     operator         = "GreaterThan"
-    threshold        = 80
+    threshold        = 100000000
   }
 
   action {
