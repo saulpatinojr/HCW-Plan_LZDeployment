@@ -1,0 +1,146 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# 🔐 Azure Landing Zone Compliance Dashboard\n\nReal-time compliance monitoring and audit trail for policy enforcement."
+      },
+      "name": "ComplianceHeader"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "## 📊 Overall Compliance Status"
+            },
+            "name": "OverallHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "policyresources\n| where type == 'microsoft.policyinsights/policystates'\n| summarize Total=count(), Compliant=countif(properties.complianceState == 'Compliant'), NonCompliant=countif(properties.complianceState == 'NonCompliant'), Unknown=countif(properties.complianceState == 'Unknown')\n| extend CompliancePercentage=round((Compliant*100.0)/Total, 1)\n| project CompliancePercentage, CompliantResources=Compliant, NonCompliantResources=NonCompliant, UnknownResources=Unknown",
+              "size": 3,
+              "title": "Policy Compliance Summary",
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "name": "ComplianceSummary"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## ⚖️ Compliance by Policy"
+            },
+            "name": "PolicyBreakdownHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "policyresources\n| where type == 'microsoft.policyinsights/policystates'\n| summarize Total=count(), Compliant=countif(properties.complianceState == 'Compliant'), NonCompliant=countif(properties.complianceState == 'NonCompliant') by policyDefinitionName=properties.policyDefinitionName\n| extend CompliancePercent=round((Compliant*100.0)/Total, 1)\n| top 20 by NonCompliant desc\n| project PolicyName=policyDefinitionName, Total, Compliant, NonCompliant, CompliancePercent",
+              "size": 2,
+              "title": "Non-Compliance by Policy",
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "visualization": "table"
+            },
+            "name": "PolicyBreakdown"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## 📈 Compliance Trend (30 Days)"
+            },
+            "name": "TrendHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "policyresources\n| where type == 'microsoft.policyinsights/policystates'\n| where properties.timestamp > ago(30d)\n| summarize Total=count(), Compliant=countif(properties.complianceState == 'Compliant') by bin(properties.timestamp, 1d)\n| extend CompliancePercent=round((Compliant*100.0)/Total, 1)\n| order by timestamp asc\n| project timestamp, CompliancePercent, Compliant, Total",
+              "size": 2,
+              "title": "Compliance Trend",
+              "timeContext": {
+                "durationMs": 2592000000
+              },
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "visualization": "linechart"
+            },
+            "name": "ComplianceTrend"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## 🔍 Non-Compliant Resources"
+            },
+            "name": "NonCompliantHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "policyresources\n| where type == 'microsoft.policyinsights/policystates'\n| where properties.complianceState == 'NonCompliant'\n| project ResourceName=tostring(split(properties.resourceId, '/')[(-1)]), ResourceType=tostring(split(properties.resourceId, '/')[(-3)]), PolicyName=properties.policyDefinitionName, Timestamp=properties.timestamp\n| top 50 by Timestamp desc",
+              "size": 2,
+              "title": "Recent Non-Compliant Resources",
+              "timeContext": {
+                "durationMs": 604800000
+              },
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "visualization": "table"
+            },
+            "name": "NonCompliantResources"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## 🛠️ Remediation Status"
+            },
+            "name": "RemediationHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AzureActivity\n| where OperationName contains 'Remediation'\n| where TimeGenerated > ago(7d)\n| summarize Attempts=count(), Successful=countif(ActivityStatus == 'Succeeded'), Failed=countif(ActivityStatus == 'Failed') by bin(TimeGenerated, 1d)\n| extend SuccessRate=round((Successful*100.0)/(Attempts), 1)\n| order by TimeGenerated desc",
+              "size": 2,
+              "title": "Auto-Remediation Results (Last 7 Days)",
+              "timeContext": {
+                "durationMs": 604800000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table"
+            },
+            "name": "RemediationStatus"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## 📋 Audit Log"
+            },
+            "name": "AuditLogHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AzureActivity\n| where ResourceProvider contains 'Policy' or OperationName contains 'Compliance'\n| top 50 by TimeGenerated desc\n| project TimeGenerated, OperationName, ActivityStatus, Caller, ResourceGroup, Details=tostring(Properties)",
+              "size": 2,
+              "title": "Recent Policy Activity",
+              "timeContext": {
+                "durationMs": 604800000\n              },\n              \"queryType\": 0,\n              \"resourceType\": \"microsoft.operationalinsights/workspaces\",\n              \"visualization\": \"table\"\n            },\n            \"name\": \"AuditLog\"\n          }\n        ]\n      },\n      \"name\": \"ComplianceDashboardGroup\"\n    }\n  ],\n  \"$schema\": \"https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json\"\n}

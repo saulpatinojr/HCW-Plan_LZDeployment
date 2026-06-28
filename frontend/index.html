@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Landing Zone Deployment</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.5/dist/msal-browser.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>🏢 Azure Landing Zone Deployment</h1>
+                <p>Self-service deployment orchestration</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <span id="userName" style="display:none; color: #505050; font-size: 14px;"></span>
+                <button id="loginBtn" class="btn btn-primary">Login with Azure</button>
+                <button id="logoutBtn" class="btn btn-secondary" style="display:none;">Logout</button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Login Section -->
+            <section id="loginSection" class="section">
+                <div class="card">
+                    <h2>Sign In</h2>
+                    <p>Authenticate with your Azure account to deploy a landing zone.</p>
+                    <button id="loginBtn2" class="btn btn-primary btn-large">Login with Microsoft</button>
+                    <div id="errorMsg" class="error" style="display:none;"></div>
+                </div>
+            </section>
+
+            <!-- Form Section -->
+            <section id="formSection" class="section" style="display:none;">
+                <form id="deploymentForm">
+                    <!-- Organization Prefix -->
+                    <div class="form-group">
+                        <label for="orgPrefix">Organization Prefix <span class="required">*</span></label>
+                        <input
+                            type="text"
+                            id="orgPrefix"
+                            name="orgPrefix"
+                            pattern="^[a-z]{3,8}$"
+                            placeholder="e.g., contoso (3-8 lowercase letters)"
+                            required
+                        >
+                        <small>3-8 lowercase letters, used in resource naming</small>
+                    </div>
+
+                    <!-- Module Selection -->
+                    <div class="form-group">
+                        <label>Modules to Deploy <span class="required">*</span></label>
+                        <div class="checkbox-group">
+                            <label class="checkbox always-selected">
+                                <input type="checkbox" name="modules" value="hub-network" checked disabled>
+                                <span>Hub Network</span>
+                                <small>Always deployed - hub VNet, firewall, VPN/ER gateway, bastion</small>
+                            </label>
+                            <label class="checkbox always-selected">
+                                <input type="checkbox" name="modules" value="spoke-network" checked disabled>
+                                <span>Spoke Networks</span>
+                                <small>Always deployed - workload VNets, peering to hub</small>
+                            </label>
+                            <label class="checkbox always-selected">
+                                <input type="checkbox" name="modules" value="policy-baseline" checked disabled>
+                                <span>Azure Policies (+ Compliance Variant)</span>
+                                <small>Always deployed - governance, compliance, tagging enforcement</small>
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" name="modules" value="backup-baseline">
+                                <span>Backup & Recovery</span>
+                                <small>Optional - backup vaults, replication, disaster recovery setup</small>
+                            </label>
+                            <label class="checkbox">
+                                <input type="checkbox" name="modules" value="defender-baseline">
+                                <span>Defender for Cloud</span>
+                                <small>Optional - security monitoring, threat detection (+$1500-3000/mo)</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Compliance Variant -->
+                    <div class="form-group">
+                        <label for="compliance">Compliance Variant <span class="required">*</span></label>
+                        <select id="compliance" name="compliance" required>
+                            <option value="baseline">Baseline (no specific compliance requirement)</option>
+                            <option value="pci-dss">PCI-DSS (Payment Card Industry)</option>
+                            <option value="hipaa">HIPAA (Healthcare)</option>
+                            <option value="fedramp">FedRAMP (Government)</option>
+                        </select>
+                        <small id="complianceInfo">Standard policies: tagging, encryption, audit logging</small>
+                    </div>
+
+                    <!-- Regions -->
+                    <div class="form-group">
+                        <label for="primaryRegion">Primary Region <span class="required">*</span></label>
+                        <input
+                            type="text"
+                            id="primaryRegion"
+                            name="primaryRegion"
+                            placeholder="e.g., eastus"
+                            value="eastus"
+                            required
+                        >
+                        <small>Azure region for production infrastructure</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="secondaryRegion">Secondary Region (for DR) <span class="required">*</span></label>
+                        <input
+                            type="text"
+                            id="secondaryRegion"
+                            name="secondaryRegion"
+                            placeholder="e.g., westus"
+                            value="westus"
+                            required
+                        >
+                        <small>Azure region for disaster recovery (skeleton deployment)</small>
+                    </div>
+
+                    <!-- Cost Estimate -->
+                    <div class="card cost-estimate">
+                        <h3>Estimated Monthly Cost</h3>
+                        <div id="costBreakdown">
+                            <p>Loading cost estimate...</p>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-large">Deploy to Azure</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Loading Section -->
+            <section id="loadingSection" class="section" style="display:none;">
+                <div class="card">
+                    <h2>Deploying...</h2>
+                    <div class="spinner"></div>
+                    <p>Creating your Azure Landing Zone deployment package...</p>
+                </div>
+            </section>
+
+            <!-- Success Section -->
+            <section id="successSection" class="section" style="display:none;">
+                <div class="card success">
+                    <h2>✅ Deployment Package Created!</h2>
+                    <p>Your Terraform configuration has been generated and released.</p>
+                    <div id="successDetails"></div>
+                    <button class="btn btn-primary" onclick="location.reload()">Deploy Another</button>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Azure Landing Zone Deployment Orchestration • <a href="docs/CUSTOMER-SETUP.md">Setup Guide</a></p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

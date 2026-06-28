@@ -1,0 +1,157 @@
+name: Deploy from Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to deploy (e.g., v1.0.0-contoso-baseline-1)'
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  extract-config:
+    runs-on: ubuntu-latest
+    outputs:
+      org_prefix: ${{ steps.extract.outputs.org_prefix }}
+      terraform_dir: ${{ steps.extract.outputs.terraform_dir }}
+    steps:
+      - name: Extract org_prefix from release tag
+        id: extract
+        run: |
+          # Extract org_prefix from tag format: v1.0.0-{org_prefix}-{compliance}-{run_number}
+          # Example: v1.0.0-contoso-baseline-123 → contoso
+          TAG="${{ github.ref }}"
+          echo "📌 Processing release tag: $TAG"
+
+          # Remove 'refs/tags/' prefix if present
+          TAG=$(echo "$TAG" | sed 's|refs/tags/||')
+
+          # Extract org_prefix (between first and second dash after v1.0.0)
+          ORG_PREFIX=$(echo "$TAG" | sed -E 's/^v[0-9]+\.[0-9]+\.[0-9]+-([^-]+)-.*/\1/')
+
+          if [[ ! "$ORG_PREFIX" =~ ^[a-z]{3,8}$ ]]; then
+            echo "❌ Failed to extract valid org_prefix from tag: $TAG"
+            echo "Expected format: v1.0.0-{org_prefix}-{compliance}-{run_number}"
+            exit 1
+          fi
+
+          echo "org_prefix=$ORG_PREFIX" >> $GITHUB_OUTPUT
+          echo "terraform_dir=terraform/live/$ORG_PREFIX" >> $GITHUB_OUTPUT
+          echo "✅ Extracted org_prefix: $ORG_PREFIX"
+          echo "✅ Terraform directory: terraform/live/$ORG_PREFIX"
+
+  plan:
+    runs-on: ubuntu-latest
+    needs: extract-config
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '~> 1.9.0'
+          cli_config_credentials_token: ${{ secrets.TF_CLOUD_TOKEN }}
+
+      - name: Terraform Format Check
+        run: |
+          cd ${{ needs.extract-config.outputs.terraform_dir }}
+          terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: |
+          cd ${{ needs.extract-config.outputs.terraform_dir }}
+          terraform init -backend-config=backend.hcl
+
+      - name: Terraform Plan
+        run: |
+          cd ${{ needs.extract-config.outputs.terraform_dir }}
+          terraform plan -out=tfplan
+          echo "📋 Plan complete. Review in Terraform Cloud UI."
+
+      - name: Upload Plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-plan-${{ needs.extract-config.outputs.org_prefix }}
+          path: ${{ needs.extract-config.outputs.terraform_dir }}/tfplan
+
+  apply:
+    runs-on: ubuntu-latest
+    needs: [extract-config, plan]
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '~> 1.9.0'
+          cli_config_credentials_token: ${{ secrets.TF_CLOUD_TOKEN }}
+
+      - name: Download Plan
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-plan-${{ needs.extract-config.outputs.org_prefix }}
+          path: ${{ needs.extract-config.outputs.terraform_dir }}
+
+      - name: Terraform Apply
+        id: apply
+        run: |
+          cd ${{ needs.extract-config.outputs.terraform_dir }}
+          echo "🚀 Starting Terraform apply..."
+          terraform apply -auto-approve tfplan 2>&1 | tee apply.log
+          echo "✅ Terraform apply completed successfully"
+
+      - name: Extract Terraform Outputs
+        if: success()
+        id: outputs
+        run: |
+          cd ${{ needs.extract-config.outputs.terraform_dir }}
+          echo "📊 Extracting Terraform outputs..."
+          terraform output -json > outputs.json
+          cat outputs.json
+          echo "✅ Outputs extracted"
+
+      - name: Post Deployment Success
+        if: success()
+        run: |
+          echo "🎉 ALZ Deployment Successful!"
+          echo ""
+          echo "📦 Deployment Summary:"
+          echo "  Organization: ${{ needs.extract-config.outputs.org_prefix }}"
+          echo "  Terraform Dir: ${{ needs.extract-config.outputs.terraform_dir }}"
+          echo "  Status: ✅ Completed"
+          echo ""
+          echo "📍 Resource State:"
+          echo "  Location: Terraform Cloud"
+          echo "  Workspace: ${{ needs.extract-config.outputs.org_prefix }}-landing-zone"
+          echo "  View at: https://app.terraform.io/"
+          echo ""
+          echo "🔍 Next Steps:"
+          echo "  1. Review Azure Portal for deployed resources"
+          echo "  2. Update workload spoke configurations"
+          echo "  3. Enable monitoring and backup policies"
+
+      - name: Post Deployment Failure
+        if: failure()
+        run: |
+          echo "❌ ALZ Deployment Failed"
+          echo ""
+          echo "⚠️  Troubleshooting:"
+          echo "  1. Check logs above for error details"
+          echo "  2. Verify subscription IDs in terraform.tfvars"
+          echo "  3. Ensure backend.hcl has correct Terraform Cloud org"
+          echo "  4. Review Terraform Cloud workspace for drift"
+          echo ""
+          exit 1

@@ -1,0 +1,133 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# 🏥 Azure Landing Zone Health Dashboard\n\nReal-time health monitoring and operational insights for your ALZ deployment."
+      },
+      "name": "Header"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "## 📊 Deployment Status"
+            },
+            "name": "DeploymentStatusHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where resourceGroup == '{ResourceGroup}'\n| summarize Total=count(), Healthy=countif(provisioningState == 'Succeeded'), Failed=countif(provisioningState == 'Failed')\n| project Total, Healthy, Failed, HealthPercentage=round((Healthy*100)/Total)",
+              "size": 3,
+              "title": "Resource Deployment Status",
+              "timeContext": {
+                "durationMs": 3600000
+              },
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "name": "DeploymentStatus"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## 🔒 Compliance Status"
+            },
+            "name": "ComplianceHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "policyresources\n| where type == 'microsoft.policyinsights/policystates'\n| summarize Total=count(), Compliant=countif(properties.complianceState == 'Compliant'), NonCompliant=countif(properties.complianceState == 'NonCompliant')\n| project Total, Compliant, NonCompliant, CompliancePercentage=round((Compliant*100)/Total)",
+              "size": 3,
+              "title": "Policy Compliance Overview",
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources"
+            },
+            "name": "ComplianceStatus"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## ⚙️ Network Health"
+            },
+            "name": "NetworkHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AzureDiagnostics\n| where ResourceType == 'AZUREFIREWALLS'\n| where MetricName == 'Throughput'\n| summarize AvgThroughput=avg(Average), MaxThroughput=max(Maximum)\n| project AvgThroughput=round(AvgThroughput), MaxThroughput=round(MaxThroughput)",
+              "size": 3,
+              "title": "Firewall Throughput",
+              "timeContext": {
+                "durationMs": 3600000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "FirewallThroughput"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## 🔐 Recent Alerts"
+            },
+            "name": "AlertsHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AzureActivity\n| where ResourceProvider == 'Microsoft.Insights/alertsmanagement'\n| where OperationName contains 'Alert'\n| top 10 by TimeGenerated desc\n| project TimeGenerated, OperationName, Level, Properties",
+              "size": 3,
+              "title": "Recent Alerts (Last 24h)",
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "RecentAlerts"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## 📈 Log Analytics Health"
+            },
+            "name": "LogAnalyticsHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "Heartbeat\n| where TimeGenerated > ago(1h)\n| summarize ComputerCount=dcount(Computer), IngestionRate=count()\n| project 'Computers Reporting'=ComputerCount, 'Records Ingested'=IngestionRate",
+              "size": 3,
+              "title": "Log Analytics Ingestion",
+              "timeContext": {
+                "durationMs": 3600000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "LogAnalyticsHealth"
+          }
+        ]
+      },
+      "name": "DashboardGroup"
+    }
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

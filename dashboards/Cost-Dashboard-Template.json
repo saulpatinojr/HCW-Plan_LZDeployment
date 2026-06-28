@@ -1,0 +1,158 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# 💰 Azure Landing Zone Cost Analysis Dashboard\n\nReal-time cost tracking, budgets, and optimization recommendations."
+      },
+      "name": "CostHeader"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "## 📊 Current Month Costs"
+            },
+            "name": "CurrentMonthHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "CostManagementQuery\n| where TimeGenerated > startofmonth(now())\n| summarize TotalCost=sum(PreTaxCost)\n| extend CostUSD=round(TotalCost, 2), EstimatedMonthlyTotal=round(TotalCost * (day(endofmonth(now()))/day(now())), 2)",
+              "size": 3,
+              "title": "Current Month Spending",
+              "timeContext": {
+                "durationMs": 2592000000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "CurrentMonthCost"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## 📈 Cost Trends"
+            },
+            "name": "TrendHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "CostManagementQuery\n| where TimeGenerated > ago(90d)\n| summarize MonthlyCost=sum(PreTaxCost) by bin(TimeGenerated, 1d)\n| project TimeGenerated, Cost=round(MonthlyCost, 2)\n| order by TimeGenerated desc",
+              "size": 2,
+              "title": "Cost Trend (90 Days)",
+              "timeContext": {
+                "durationMs": 7776000000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "linechart"
+            },
+            "name": "CostTrend"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## 🔍 Cost by Service"
+            },
+            "name": "ServiceBreakdownHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "CostManagementQuery\n| where TimeGenerated > startofmonth(now())\n| summarize CostByService=sum(PreTaxCost) by ServiceName\n| top 10 by CostByService desc\n| project ServiceName, Cost=round(CostByService, 2), Percentage=round((CostByService/sum(CostByService))*100, 1)",
+              "size": 2,
+              "title": "Top 10 Services by Cost",
+              "timeContext": {
+                "durationMs": 2592000000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "piechart"
+            },
+            "name": "ServiceBreakdown"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## 💡 Optimization Recommendations"
+            },
+            "name": "OptimizationHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AzureAdvisor\n| where Category == 'Cost'\n| where Impact == 'High' or Impact == 'Medium'\n| top 10 by EstimatedSavings desc\n| project Recommendation, EstimatedSavings=round(EstimatedSavings, 2), Impact, ResourceGroup",
+              "size": 2,
+              "title": "High Impact Opportunities",
+              "timeContext": {
+                "durationMs": 2592000000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "Recommendations"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## 🎯 Budget vs. Actual"
+            },
+            "name": "BudgetHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "CostManagementBudget\n| project BudgetName, BudgetLimit, CurrentSpend=round(CurrentMonthSpend, 2), Remaining=round(BudgetLimit - CurrentMonthSpend, 2), PercentUsed=round((CurrentMonthSpend/BudgetLimit)*100, 1)\n| order by PercentUsed desc",
+              "size": 2,
+              "title": "Budget Status",
+              "timeContext": {
+                "durationMs": 2592000000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "BudgetStatus"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## 📋 Cost by Resource Group"
+            },
+            "name": "RGBreakdownHeader"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "CostManagementQuery\n| where TimeGenerated > startofmonth(now())\n| summarize CostByRG=sum(PreTaxCost) by ResourceGroup\n| top 20 by CostByRG desc\n| project ResourceGroup, Cost=round(CostByRG, 2)",
+              "size": 2,
+              "title": "Cost by Resource Group",
+              "timeContext": {
+                "durationMs": 2592000000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table"
+            },
+            "name": "RGBreakdown"
+          }
+        ]
+      },
+      "name": "CostDashboardGroup"
+    }
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
