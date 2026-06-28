@@ -169,14 +169,14 @@ jobs:
         continue-on-error: true
       
       - name: Upload Plan Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: tfplan-${{ matrix.layer }}
           path: terraform/live/${{ matrix.layer }}/tfplan
           retention-days: 30
       
       - name: Comment PR with Plan
-        uses: actions/github-script@v9
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553
         if: github.event_name == 'pull_request'
         with:
           script: |

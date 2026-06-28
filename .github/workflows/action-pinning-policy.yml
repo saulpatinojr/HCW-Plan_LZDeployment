@@ -1,0 +1,37 @@
+name: Action Pinning Policy
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  enforce-pinning:
+    name: Enforce Immutable Action Refs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Fail on mutable action refs
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Scanning workflows for mutable refs (@v*, @main, @master, @latest)..."
+
+          # Ignore local actions (uses: ./path)
+          MATCHES=$(grep -RInE '^[[:space:]]*uses:[[:space:]]*[^./][^[:space:]]+@(v[0-9]|main|master|latest)\b' .github/workflows deployments/**/.github/workflows 2>/dev/null || true)
+
+          if [[ -n "$MATCHES" ]]; then
+            echo "Mutable action references detected:"
+            echo "$MATCHES"
+            echo
+            echo "Use full commit SHAs for all third-party actions."
+            exit 1
+          fi
+
+          echo "All action refs are immutable (SHA-pinned)."
