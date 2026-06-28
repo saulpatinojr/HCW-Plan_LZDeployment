@@ -1,12 +1,36 @@
 # Azure Landing Zone Deployment System — Status Report
 
-**As of:** 2026-06-28 (20:00 UTC)  
-**Phase:** 0, 1A, 1B, 1C, 1D, 1E Complete | 1F Testing Pending  
-**Overall Progress:** 85% Complete (Phase 1F testing remaining before Phase 2)
+**As of:** 2026-06-28  
+**Status:** Truth-Reconciled (code-verified)  
+**Source of truth:** Terraform validation and workflow diagnostics in this repository
 
 ---
 
-## Completed Deliverables
+## Verified Current State
+
+- Terraform modules: validate clean
+- Terraform live stacks: validate clean (`global`, `platform-connectivity`, `platform-management`, `sandbox`, `workloads-prod`)
+- GitHub workflows: syntax clean; third-party actions SHA-pinned
+- Security scanning and policy workflows: present
+- CMK and Sentinel modules: explicitly gated as non-implemented (scaffold only)
+
+## Phase Truth Notes
+
+- Historical phase completion documents remain in `docs/` for traceability.
+- Prior "all phases complete" language is superseded by this report.
+- Treat this file plus CI status checks as deployment readiness criteria.
+
+## Known Boundaries
+
+- `terraform/modules/keyvault-cmk/` is a scaffold module and intentionally blocked from deployment.
+- `terraform/modules/sentinel-siem/` is a scaffold module and intentionally blocked from deployment.
+- To implement either module, remove deployment gates and provide full resource definitions.
+
+---
+
+## Historical Detail
+
+Historical implementation narratives are retained below for audit history.
 
 ### Phase 0: Template Repository Structure ✅
 **Status:** Complete  

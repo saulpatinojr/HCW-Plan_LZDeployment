@@ -63,6 +63,22 @@ Write-Host "  Organization: $OrgPrefix" -ForegroundColor Gray
 Write-Host "  Modules: $($Modules -join ', ')" -ForegroundColor Gray
 Write-Host "  Compliance: $ComplianceVariant" -ForegroundColor Gray
 
+$implementedModules = @("hub-network", "spoke-network", "policy-baseline", "backup-baseline", "defender-baseline")
+$gatedModules = @("keyvault-cmk", "sentinel-siem")
+
+$unknownModules = @($Modules | Where-Object { $_ -notin ($implementedModules + $gatedModules) })
+if ($unknownModules.Count -gt 0) {
+  Write-Error "Unsupported module(s): $($unknownModules -join ', '). Supported modules: $($implementedModules -join ', ')"
+  exit 1
+}
+
+$blockedModules = @($Modules | Where-Object { $_ -in $gatedModules })
+if ($blockedModules.Count -gt 0) {
+  Write-Error "Module(s) not implemented and explicitly gated: $($blockedModules -join ', ')."
+  Write-Host "Use implemented modules only: $($implementedModules -join ', ')" -ForegroundColor Yellow
+  exit 1
+}
+
 # ═════════════════════════════════════════════════════════════════════════════
 # Region Code Mapping (for naming conventions)
 # ═════════════════════════════════════════════════════════════════════════════

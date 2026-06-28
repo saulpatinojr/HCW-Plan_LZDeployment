@@ -1,0 +1,102 @@
+name: Terraform Policy Checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-*.yml"
+      - ".github/workflows/terraform-policy-checks.yml"
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-*.yml"
+      - ".github/workflows/terraform-policy-checks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  fmt-validate:
+    name: fmt + validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        with:
+          terraform_version: 1.9.0
+
+      - name: Terraform fmt (fail-fast)
+        run: terraform fmt -check -recursive terraform
+
+      - name: Terraform validate modules (fail-fast)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for d in terraform/modules/*; do
+            [ -d "$d" ] || continue
+            echo "Validating module: $d"
+            terraform -chdir="$d" init -backend=false -input=false -no-color >/dev/null
+            terraform -chdir="$d" validate -no-color
+          done
+
+      - name: Terraform validate live stacks (fail-fast)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for d in terraform/live/*; do
+            [ -d "$d" ] || continue
+            echo "Validating stack: $d"
+            terraform -chdir="$d" init -backend=false -input=false -no-color >/dev/null
+            terraform -chdir="$d" validate -no-color
+          done
+
+  tflint:
+    name: tflint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@6e87008f9dd1fe3e34e66aca6c97b4a69f72a7f4
+
+      - name: Init TFLint plugins
+        run: tflint --chdir=terraform --init
+
+      - name: Run TFLint on modules (fail-fast)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for d in terraform/modules/*; do
+            [ -d "$d" ] || continue
+            echo "Linting module: $d"
+            tflint --chdir="$d"
+          done
+
+      - name: Run TFLint on live stacks (fail-fast)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for d in terraform/live/*; do
+            [ -d "$d" ] || continue
+            echo "Linting stack: $d"
+            tflint --chdir="$d"
+          done
+
+  tfsec:
+    name: tfsec
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: tfsec scan (fail-fast)
+        uses: aquasecurity/tfsec-action@b466648d6e39e7c75324f25d83891162a721f2d6
+        with:
+          working_directory: terraform/
+          soft_fail: false
