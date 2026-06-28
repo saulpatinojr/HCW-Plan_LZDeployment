@@ -23,7 +23,6 @@ resource "azurerm_recovery_services_vault" "main" {
   resource_group_name = azurerm_resource_group.backup.name
   location            = azurerm_resource_group.backup.location
   sku                 = "Standard"
-  soft_delete_enabled = true
   
   storage_mode_type = var.storage_redundancy
   
@@ -82,7 +81,7 @@ resource "azurerm_monitor_diagnostic_setting" "rsv" {
     category = "AddonAzureBackupStorage"
   }
   
-  metric {
+  enabled_metric {
     category = "Health"
   }
 }

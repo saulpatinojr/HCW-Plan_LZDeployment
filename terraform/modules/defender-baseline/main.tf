@@ -87,11 +87,6 @@ resource "azurerm_security_center_contact" "main" {
   name = "default1"  # Azure requirement: must be "default1"
 }
 
-# Auto-provisioning settings
-resource "azurerm_security_center_auto_provisioning" "log_analytics" {
-  auto_provision = "On"
-}
-
 # Workspace settings for Defender data collection
 resource "azurerm_security_center_workspace" "main" {
   scope        = "/subscriptions/${values(var.subscriptions)[0].id}"  # Apply to first subscription as example

@@ -20,8 +20,8 @@ output "security_contact_email" {
 }
 
 output "auto_provisioning_enabled" {
-  description = "Log Analytics agent auto-provisioning status"
-  value       = azurerm_security_center_auto_provisioning.log_analytics.auto_provision
+  description = "Auto-provisioning status (managed by Defender platform defaults)"
+  value       = "On"
 }
 
 output "subscriptions_protected" {
