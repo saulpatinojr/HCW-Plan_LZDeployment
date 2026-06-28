@@ -1,0 +1,42 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# azure-auth-test.yml  – validates OIDC federated identity to Azure
+# Run manually once after setting AZURE_CLIENT_ID / TENANT_ID / SUBSCRIPTION_ID
+# ─────────────────────────────────────────────────────────────────────────────
+name: Azure Auth Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # required for OIDC
+  contents: read
+
+jobs:
+  auth-test:
+    name: OIDC Login Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id:       ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id:       ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify identity
+        run: |
+          echo "=== Logged-in identity ==="
+          az account show --query '{account:id, tenant:tenantId, user:user.name}' -o json
+
+      - name: Show RBAC assignments
+        run: |
+          echo "=== Role assignments for this SP ==="
+          az role assignment list --assignee "$(az account show --query user.name -o tsv)" \
+            --query '[].{role:roleDefinitionName, scope:scope}' -o table
+
+      - name: Azure Logout
+        if: always()
+        run: az logout || true
