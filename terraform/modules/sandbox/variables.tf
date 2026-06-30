@@ -8,7 +8,6 @@ variable "create_sandbox_rg" {
 variable "resource_group_name" {
   description = "Name of the sandbox resource group"
   type        = string
-  default     = "rg-sandbox-dev-eastus"
   nullable    = false
 
   validation {
@@ -20,7 +19,6 @@ variable "resource_group_name" {
 variable "location" {
   description = "Azure region for the sandbox resource group"
   type        = string
-  default     = "eastus"
   nullable    = false
 
   validation {
@@ -51,13 +49,20 @@ variable "sandbox_tags" {
     owner        = optional(string)
   })
 
-  default = {
-    environment  = "sandbox"
-    lifecycle    = "temporary"
-    created_date = "2026-06-30"
-    expiry_date  = "2026-07-30"
-    owner        = "platform-team"
+  nullable = false
+
+  validation {
+    condition     = contains(["temporary", "permanent"], var.sandbox_tags.lifecycle)
+    error_message = "Lifecycle must be 'temporary' or 'permanent'"
   }
 
-  nullable = false
+  validation {
+    condition     = can(regex("^\\d{4}-\\d{2}-\\d{2}$", var.sandbox_tags.created_date))
+    error_message = "created_date must be in ISO 8601 format (YYYY-MM-DD)"
+  }
+
+  validation {
+    condition     = var.sandbox_tags.expiry_date == null || can(regex("^\\d{4}-\\d{2}-\\d{2}$", var.sandbox_tags.expiry_date))
+    error_message = "expiry_date must be in ISO 8601 format (YYYY-MM-DD) or null"
+  }
 }
