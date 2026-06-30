@@ -14,10 +14,10 @@
                 <h1>🏢 Azure Landing Zone Deployment</h1>
                 <p>Self-service deployment orchestration</p>
             </div>
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <span id="userName" style="display:none; color: #505050; font-size: 14px;"></span>
+            <div class="header-flex">
+                <span id="userName" class="hidden"></span>
                 <button id="loginBtn" class="btn btn-primary">Login with Azure</button>
-                <button id="logoutBtn" class="btn btn-secondary" style="display:none;">Logout</button>
+                <button id="logoutBtn" class="btn btn-secondary hidden">Logout</button>
             </div>
         </header>
 
@@ -28,12 +28,12 @@
                     <h2>Sign In</h2>
                     <p>Authenticate with your Azure account to deploy a landing zone.</p>
                     <button id="loginBtn2" class="btn btn-primary btn-large">Login with Microsoft</button>
-                    <div id="errorMsg" class="error" style="display:none;"></div>
+                    <div id="errorMsg" class="error hidden"></div>
                 </div>
             </section>
 
             <!-- Form Section -->
-            <section id="formSection" class="section" style="display:none;">
+            <section id="formSection" class="section hidden">
                 <form id="deploymentForm">
                     <!-- Organization Prefix -->
                     <div class="form-group">
@@ -136,7 +136,7 @@
             </section>
 
             <!-- Loading Section -->
-            <section id="loadingSection" class="section" style="display:none;">
+            <section id="loadingSection" class="section hidden">
                 <div class="card">
                     <h2>Deploying...</h2>
                     <div class="spinner"></div>
@@ -145,7 +145,7 @@
             </section>
 
             <!-- Success Section -->
-            <section id="successSection" class="section" style="display:none;">
+            <section id="successSection" class="section hidden">
                 <div class="card success">
                     <h2>✅ Deployment Package Created!</h2>
                     <p>Your Terraform configuration has been generated and released.</p>

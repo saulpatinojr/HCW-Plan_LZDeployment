@@ -793,6 +793,24 @@ See [Day 2 Documentation](docs/day2/) for:
 - DR test procedures
 - Access request workflows
 
+## Documentation
+
+**Project Strategy & Planning**:
+- **[PLAN.md](docs/PLAN.md)** — Strategic roadmap (Phases 0-5: Audit → Web App → Security)
+- **[TODO.md](TODO.md)** — Detailed execution checklist for current phase
+- **[CHANGELOG.md](CHANGELOG.md)** — Completed work history
+
+**Infrastructure & Operations**:
+- **[Day 2 Operations](docs/day2/)** — Runbooks, incident response, change management
+- **[Architecture Documentation](docs/)** — Design decisions and technical details
+- **[Deployment Guide](DEPLOYMENT-GUIDE.md)** — Step-by-step deployment instructions
+
+**Compliance & Security**:
+- **[Security Audit Report](docs/compliance/SECURITY-AUDIT-REPORT-2026-05-28.md)** — Findings and remediation
+- **[Pre-Remediation Baseline](docs/compliance/PRE-REMEDIATION-STATUS-2026-05-28.md)** — Initial state assessment
+
+---
+
 ## Support
 
 For issues or questions:

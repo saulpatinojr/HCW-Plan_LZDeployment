@@ -1,15 +1,6 @@
 # Management Baseline Module
 # Provides Log Analytics, Automation Account, and monitoring foundations
 
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.2"
-    }
-  }
-}
-
 data "azurerm_client_config" "current" {}
 
 # Management Resource Group

@@ -128,14 +128,18 @@ function updateLoginUI() {
     const userName = document.getElementById("userName");
 
     if (currentUser) {
-        if (loginBtn) loginBtn.style.display = "none";
-        if (loginBtn2) loginBtn2.style.display = "none";
-        if (logoutBtn) logoutBtn.style.display = "inline-block";
-        if (userName) userName.textContent = currentUser.name || "User";
+        if (loginBtn) loginBtn.classList.add("hidden");
+        if (loginBtn2) loginBtn2.classList.add("hidden");
+        if (logoutBtn) logoutBtn.classList.remove("hidden");
+        if (userName) {
+            userName.textContent = currentUser.name || "User";
+            userName.classList.remove("hidden");
+        }
     } else {
-        if (loginBtn) loginBtn.style.display = "inline-block";
-        if (loginBtn2) loginBtn2.style.display = "block";
-        if (logoutBtn) logoutBtn.style.display = "none";
+        if (loginBtn) loginBtn.classList.remove("hidden");
+        if (loginBtn2) loginBtn2.classList.remove("hidden");
+        if (logoutBtn) logoutBtn.classList.add("hidden");
+        if (userName) userName.classList.add("hidden");
     }
 }
 
@@ -391,16 +395,16 @@ function getSelectedModules() {
 function showForm() {
     const loginSection = document.getElementById("loginSection");
     const formSection = document.getElementById("formSection");
-    if (loginSection) loginSection.style.display = "none";
-    if (formSection) formSection.style.display = "block";
+    if (loginSection) loginSection.classList.add("hidden");
+    if (formSection) formSection.classList.remove("hidden");
     updateCostEstimate();
 }
 
 function showLoading() {
     const formSection = document.getElementById("formSection");
     const loadingSection = document.getElementById("loadingSection");
-    if (formSection) formSection.style.display = "none";
-    if (loadingSection) loadingSection.style.display = "block";
+    if (formSection) formSection.classList.add("hidden");
+    if (loadingSection) loadingSection.classList.remove("hidden");
 }
 
 function showSuccess(releaseUrl, orgPrefix) {
@@ -408,8 +412,8 @@ function showSuccess(releaseUrl, orgPrefix) {
     const successSection = document.getElementById("successSection");
     const successDetails = document.getElementById("successDetails");
 
-    if (loadingSection) loadingSection.style.display = "none";
-    if (successSection) successSection.style.display = "block";
+    if (loadingSection) loadingSection.classList.add("hidden");
+    if (successSection) successSection.classList.remove("hidden");
 
     const releaseLink = releaseUrl || `https://github.com/${config.github.owner}/${config.github.repo}/releases`;
     const successHtml = `
@@ -441,11 +445,11 @@ function showError(message) {
     const formSection = document.getElementById("formSection");
     const errorMsg = document.getElementById("errorMsg");
 
-    if (loadingSection) loadingSection.style.display = "none";
-    if (formSection) formSection.style.display = "block";
+    if (loadingSection) loadingSection.classList.add("hidden");
+    if (formSection) formSection.classList.remove("hidden");
     if (errorMsg) {
         errorMsg.textContent = "❌ Error: " + message;
-        errorMsg.style.display = "block";
+        errorMsg.classList.remove("hidden");
     }
 
     console.error("Form error:", message);

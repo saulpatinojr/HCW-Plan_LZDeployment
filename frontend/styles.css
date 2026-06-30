@@ -326,6 +326,30 @@ footer a:hover {
 }
 
 /* ═════════════════════════════════════════════════════════════════════════════
+   Header Utility Classes
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+.header-flex {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+#userName {
+    color: #505050;
+    font-size: 14px;
+}
+
+#userName.hidden,
+#loginBtn2.hidden,
+#errorMsg.hidden,
+#formSection.hidden,
+#loadingSection.hidden,
+#successSection.hidden {
+    display: none;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════
    Responsive
    ═════════════════════════════════════════════════════════════════════════════ */
 
