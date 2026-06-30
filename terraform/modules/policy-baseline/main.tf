@@ -1,15 +1,6 @@
 # Policy Baseline Module
 # Deploys Azure Policy definitions and assignments
 
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.2"
-    }
-  }
-}
-
 # Require specific tags policy
 resource "azurerm_policy_definition" "require_tags" {
   name         = "require-mandatory-tags"

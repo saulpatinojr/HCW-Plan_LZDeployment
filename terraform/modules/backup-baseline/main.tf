@@ -1,15 +1,6 @@
 # Backup Baseline Module
 # Deploys Recovery Services Vaults and Backup Vaults
 
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.2"
-    }
-  }
-}
-
 # Resource group for backup services
 resource "azurerm_resource_group" "backup" {
   name     = "rg-backup-${var.region_code}-${var.environment}-01"

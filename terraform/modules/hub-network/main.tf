@@ -1,15 +1,6 @@
 # Hub Network Module
 # Dual-region hub with firewall (Azure FW, Palo Alto, or Fortinet)
 
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.2"
-    }
-  }
-}
-
 locals {
   # Firewall subnet sizing based on choice
   fw_subnet_sizes = {

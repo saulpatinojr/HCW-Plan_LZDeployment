@@ -1,15 +1,6 @@
 # Spoke Network Module
 # Creates spoke VNet with peering to hub and default route to firewall
 
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.2"
-    }
-  }
-}
-
 # Resource group for spoke
 resource "azurerm_resource_group" "spoke" {
   name     = "rg-${var.spoke_name}-${var.region_code}-${var.environment}-01"

@@ -1,15 +1,6 @@
 # NSG Flow Logs + Traffic Analytics Module
 # Phase 2 - Task 5.2: Enable comprehensive network monitoring
 
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.2"
-    }
-  }
-}
-
 # Storage Account for Flow Logs
 resource "azurerm_storage_account" "flow_logs" {
   name                     = "stflowlogs${var.region_code}${var.environment}"

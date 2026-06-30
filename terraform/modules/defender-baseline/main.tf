@@ -2,15 +2,6 @@
 # Phase 1 Remediation - Task 5.5 (Finding 5.5 - CVSS N/A - CRITICAL SECURITY CONTROL)
 # Enables comprehensive threat protection across all Azure subscriptions
 
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.2"
-    }
-  }
-}
-
 # Enable Microsoft Defender for Subscriptions
 resource "azurerm_security_center_subscription_pricing" "servers" {
   for_each = { for k, v in var.subscriptions : k => v if var.enable_defender_for_servers }

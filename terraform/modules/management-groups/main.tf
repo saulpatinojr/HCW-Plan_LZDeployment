@@ -1,15 +1,6 @@
 # Management Groups Module
 # Creates the management group hierarchy
 
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.2"
-    }
-  }
-}
-
 # Root management group
 resource "azurerm_management_group" "root" {
   display_name = "mg-${var.org_prefix}-root"
