@@ -1,4 +1,13 @@
-resource_group_name  = "rg-tfstate-scus-prod-01"
-storage_account_name = "<REPLACE_WITH_OUTPUT_FROM_BOOTSTRAP>"
-container_name       = "sandbox-isolation"
-key                  = "terraform.tfstate"
+# Terraform Cloud Backend Configuration
+# Usage: terraform init -backend-config=backend.hcl
+
+# Terraform Cloud API hostname
+hostname = "app.terraform.io"
+
+# Terraform Cloud organization
+organization = "YOUR_ORG_NAME"
+
+# Workspace configuration
+workspaces {
+  name = "lz-sandbox"
+}
