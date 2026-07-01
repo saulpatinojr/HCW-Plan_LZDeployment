@@ -38,7 +38,7 @@ jobs:
     name: RBAC Audit & Validation
     runs-on: ubuntu-latest
     outputs:
-      audit_passed: ${{ steps.audit.outputs.passed }}
+      audit_passed: ${{ steps.audit_main.outputs.passed }}
       rbac_summary: ${{ steps.summary.outputs.result }}
 
     steps:
@@ -434,23 +434,25 @@ jobs:
           script: |
             const fs = require('fs');
             const status = '${{ needs.rbac-audit.outputs.audit_passed }}' === 'true' ? '✓' : '✗';
-
+            const body = [
+              `## ${status} Workflow 020 - RBAC Audit`,
+              '',
+              'Automated RBAC validation completed:',
+              '',
+              '- ✓ Service principal audited',
+              '- ✓ Owner role check: PASSED',
+              '- ✓ Contributor role verified',
+              '- ✓ Federated credentials validated',
+              '',
+              '**View full audit report in Actions tab**',
+              '',
+              'For RBAC requirements and documentation, see: `docs/RBAC-REQUIREMENTS.md`',
+            ].join('\n');
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## ${ status } Workflow 020 - RBAC Audit
-
-Automated RBAC validation completed:
-
-- ✓ Service principal audited
-- ✓ Owner role check: PASSED
-- ✓ Contributor role verified
-- ✓ Federated credentials validated
-
-**View full audit report in Actions tab**
-
-For RBAC requirements and documentation, see: \`docs/RBAC-REQUIREMENTS.md\``
+              body,
             });
 
   summary:
