@@ -1,7 +1,3 @@
-terraform {
-  required_version = ">= 1.9.0"
-}
-
 check "module_not_implemented" {
   assert {
     condition     = var.enable_module == false

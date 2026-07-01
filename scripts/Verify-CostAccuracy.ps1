@@ -37,7 +37,7 @@ param(
 )
 
 # Import config
-. (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "alz-config.ps1")
+. (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "Get-AlzConfig.ps1")
 
 class CostComponent {
     [string]$Name

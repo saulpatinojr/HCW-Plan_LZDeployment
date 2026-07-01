@@ -7,57 +7,70 @@
 
 ## Completed Deliverables
 
-### ✅ Phase 2: Official ALZ Generator Implementation - COMPLETE (July 1, 2026)
+### ✅ Phase 0 Audit & CI/CD Reliability Fixes - COMPLETE (July 1, 2026)
+
+**Status**: 🟢 COMPLETE
+**Completion Date**: July 1, 2026
+
+**Context**: A full audit of every claimed-complete item in this repo's docs against actual file evidence (Terraform modules, GitHub workflows, PowerShell scripts) found several real code-level bugs behind the docs sprawl, not just stale documentation.
+
+**What Was Fixed**:
+- ✅ **OIDC pull_request gap** — `scripts/Start-LandingZoneBootstrap.ps1` only created a federated credential subject for `ref:refs/heads/main`. `terraform-plan.yml` triggers Azure OIDC login on `pull_request` events, which GitHub issues a `pull_request`-subject token for — no existing credential matched, so every PR-triggered CI run failed OIDC login by design (confirmed: zero successful runs of `terraform-plan.yml`/`terraform-apply.yml`/`010-terraform-init.yml`/`020-rbac-validation.yml` in repo history prior to this fix). Added `repo:OWNER/REPO:pull_request` federated credential to the bootloader.
+- ✅ **SHA pinning inconsistency** — `010-TERRAFORM-INIT.yml` and `020-RBAC-VALIDATION.yml` used `@v4`/`@v2`/`@v3`/`@v7` tag refs while every other workflow in the repo pins to commit SHAs (and `action-pinning-policy.yml`'s own check would fail against exactly this pattern). Pinned both files to the SHAs already used elsewhere in the repo for the same actions.
+- ✅ **Conflicting `required_version` blocks** — `terraform/modules/keyvault-cmk/main.tf` and `terraform/modules/sentinel-siem/main.tf` each had a stray second `terraform { required_version = ">= 1.9.0" }` block that contradicted the `~> 1.6` constraint in the module's own `terraform.tf` (the standard used by all 11 modules). Removed the stray blocks.
+
+**Repo cleanup — bootstrap scripts and naming** (2026-07-01):
+- ✅ Deleted `scripts/Initialize-LandingZone.ps1` and `scripts/Start-Bootstrap.ps1` — both implemented a stale "spin up a separate customer repo" model that isn't how this repo actually works. `Start-LandingZoneBootstrap.ps1` is the confirmed real, sole entry point.
+- ✅ Renamed all scripts to a consistent PowerShell Verb-Noun convention: `000_LZ_Bootloader.ps1` → `scripts/Start-LandingZoneBootstrap.ps1`, `alz-config.ps1` → `scripts/Get-AlzConfig.ps1`. Updated every reference across workflows and docs.
+- ✅ Fixed stale `.azure/deployment-options.yaml` reference in `keyvault-cmk` and `sentinel-siem` module READMEs — only `.azure/deployment-options.yaml.example` exists; READMEs now say to copy it first.
+
+**What Was Found But Deferred** (see [TODO.md](TODO.md)):
+- 🟦 Backend inconsistency: bootloader/workflow-010 reference Terraform Cloud, but `terraform-plan.yml`/`terraform-apply.yml`/all `terraform/live/*/backend.hcl` use native `azurerm` backend. Decision: adopt TFC — tracked as [GitHub Issue #11](https://github.com/saulpatinojr/HCW-Plan_LZDeployment/issues/11), blocked on interactive TFC org/workspace/token setup.
+- 🟦 `Microsoft.ApiManagement` claimed but not implemented in the TLS 1.2 policy initiative (5 of 6 claimed services actually covered).
+- 🟦 6 of 11 Terraform modules missing README.md.
+- 🟦 `keyvault-cmk` and `sentinel-siem` modules are scaffold-only stubs (zero real resources), not implemented despite being referenced as available optional modules in some docs.
+- 🟦 4 utility scripts (`Configure-DeploymentOptions.ps1`, `Invoke-BulkOperations.ps1`, `Validate-ALZDeployment.ps1`, `Verify-CostAccuracy.ps1`) have no call site anywhere in the pipeline — disposition (wire in vs. relocate) still open.
+
+**Documentation cleanup**: Consolidated 8 duplicative PR-artifact docs describing the same static-generator build into a single entry below; rewrote TODO.md to hold only pending work (all completed items moved here), matching what this repo actually does (self-deploying landing zone via `Start-LandingZoneBootstrap.ps1` + numbered workflows + Terraform, plus a separate optional static `.tfvars` generator) rather than the previously-planned Node/React/Express/Docker/OAuth "web app" that was never built.
+
+---
+
+### ✅ Static Config-Generator Frontend: Official ALZ Rebuild - COMPLETE (July 1, 2026)
 
 **Status**: 🟢 COMPLETE  
 **Completion Date**: July 1, 2026  
 **Effort**: ~8 hours (Phase 1: 4h research, Phase 2: 4h implementation)  
 **Git Commits**:
-- `77131ea` feat: complete Phase 2 - official ALZ generator implementation (#9)
+- `77131ea` feat: complete Phase 2 - official ALZ generator implementation (#9), merged 2026-07-01 05:08:23 UTC via PR #9 (branch `feature/official-alz-generator-phase2`, 11 files changed, +5218/-567)
+
+**What This Is**: `frontend/` is a static, backend-free HTML/JS/CSS tool. A user fills out a form describing their desired Landing Zone, and `OfficialALZGenerator` (in `frontend/app.js`) generates a `.tfvars` file entirely client-side — no server, no build step, no auth. The user downloads/copies the file and feeds it to the Terraform workflows (`terraform-plan.yml` / `terraform-apply.yml`) manually or via `generate-and-release.yml`. This superseded an earlier, unfinished draft of the same page that had MSAL auth stubs and planned a Node/Express backend — that direction was abandoned in favor of the zero-backend static approach (8h vs. an estimated 18-20h for a backend API).
 
 **What Was Delivered**:
-- ✅ Official ALZ generator grounded in official documentation (not guesses)
-- ✅ 50+ official policy assignments (from Azure Landing Zones docs)
-- ✅ 2 official network topologies (hub-spoke VNet, Virtual WAN)
-- ✅ 16 official customization options
-- ✅ Region auto-pairing (official Azure region pairs)
-- ✅ Dynamic environment suffixes (prod, dev, test, staging)
-- ✅ Real-time naming examples (CAF convention)
-- ✅ Auto-populated environment tags
-- ✅ Professional 9-section form UI
-- ✅ Valid .tfvars generation (matches official ALZ structure)
-- ✅ 8 comprehensive documentation files
+- Official ALZ generator grounded in the official Azure Landing Zones docs (not guessed fields)
+- 47 official policy assignments across 5 management-group scopes (Intermediate Root, Platform, Landing Zones, Landing Zones/Corp, Specialized) — sourced from the official ALZ reference, not the "50+" figure quoted in earlier drafts
+- 2 official network topologies (hub-spoke VNet, Virtual WAN)
+- 16 official customization options (resource naming, MG name overrides, feature toggles, policy effect overrides, etc.)
+- Region auto-pairing (official Azure region pairs) and dynamic environment suffixes (prod/dev/test/staging)
+- Real-time CAF naming examples, auto-populated environment tags
+- 9-section form UI, mobile-responsive, no external dependencies
+- Valid `.tfvars` generation matching the structure the `terraform/live/*` layers expect
 
-**Frontend Improvements**:
-- ✅ `frontend/app.js` (988 lines) - OfficialALZGenerator class
-- ✅ `frontend/index.html` (411 lines) - 9 form sections, 50+ policies
-- ✅ `frontend/styles.css` (423 lines) - Enhanced styling, responsive design
-
-**Documentation Created**:
-1. [PHASE_1_PREP_STAGE_INVENTORY.md](docs/PHASE_1_PREP_STAGE_INVENTORY.md) - Official ALZ config reference
-2. [PHASE_2_BUILD_PLAN.md](docs/PHASE_2_BUILD_PLAN.md) - Implementation specification
-3. [FORM_MIGRATION_GUIDE.md](docs/FORM_MIGRATION_GUIDE.md) - Field-by-field migration
-4. [PHASE_2_UX_IMPROVEMENTS.md](docs/PHASE_2_UX_IMPROVEMENTS.md) - UX enhancement details
-5. [README_PHASE_2_COMPLETE.md](docs/README_PHASE_2_COMPLETE.md) - Quick reference guide
-6. [PROJECT_COMPLETION_STATUS.md](docs/PROJECT_COMPLETION_STATUS.md) - Project summary
-7. [PHASE_1_PHASE_2_SUMMARY.md](docs/PHASE_1_PHASE_2_SUMMARY.md) - Executive overview
-8. [PHASE_2_IMPLEMENTATION_COMPLETE.md](docs/PHASE_2_IMPLEMENTATION_COMPLETE.md) - Build completion report
+**Frontend Files**:
+- `frontend/app.js` (988 lines) — `OfficialALZGenerator` class
+- `frontend/index.html` (411 lines) — 9 form sections, policy checkboxes
+- `frontend/styles.css` (423 lines) — styling, responsive layout
 
 **Acceptance Criteria Met**:
-- ✅ All 50+ policy names from official ALZ documentation
-- ✅ All variable names from official ALZ Terraform accelerator
-- ✅ All 16 customization options documented
-- ✅ 2 official network topologies only (no guesses)
-- ✅ Official Azure region pairs for auto-pairing
-- ✅ CAF naming convention with real-time examples
-- ✅ Generated .tfvars matches official ALZ structure
-- ✅ Form validation on all required fields
-- ✅ Mobile responsive design
-- ✅ Browser compatibility (Chrome, Firefox, Safari)
+- All policy names and variable names sourced from official ALZ documentation/accelerator
+- All 16 customization options implemented
+- 2 official network topologies only (no invented options)
+- Official Azure region pairs used for auto-pairing
+- Generated `.tfvars` matches the structure Terraform expects
+- Form validation on all required fields; mobile responsive; cross-browser tested (Chrome, Firefox, Safari)
 
-**Key Achievement**: Transformed a guessed-at generator into a production-ready tool grounded in official Azure Landing Zones architecture.
+**Key Achievement**: Replaced a guessed-at, half-wired generator (with dead MSAL/backend stubs) with a production-ready, zero-backend tool grounded in official Azure Landing Zones architecture.
 
-**Reference**: [docs/PHASE_2_IMPLEMENTATION_COMPLETE.md](docs/PHASE_2_IMPLEMENTATION_COMPLETE.md)
+**Documentation note**: This entry consolidates and replaces 8 separate PR-artifact docs that previously described this same build from different angles (`PROJECT_COMPLETION_STATUS.md`, `IMPLEMENTATION_COMPLETE.md`, `PHASE_2_IMPLEMENTATION_COMPLETE.md`, `README_PHASE_2_COMPLETE.md`, `MERGE_COMPLETE.md`, `PHASE_1_PHASE_2_SUMMARY.md`, `PHASE_2_UX_IMPROVEMENTS.md`, `COMPONENTS_STATUS.md`), all removed as part of Phase 0 doc reconciliation (2026-07-01). `COMPONENTS_STATUS.md` in particular had gone stale — it described an older draft of `frontend/` (MSAL auth, "Deploy to Azure" button, planned Express backend) that no longer matches the current static-generator implementation. Remaining reference docs — `PHASE_1_PREP_STAGE_INVENTORY.md`, `PHASE_2_BUILD_PLAN.md`, `FORM_MIGRATION_GUIDE.md` — still exist under `docs/` as design-detail background but are not treated as status/completion claims.
 
 ---
 
@@ -81,7 +94,7 @@
 - ✅ All modules pass terraform validate & fmt
 - ✅ 6 comprehensive documentation guides created
 
-**Modules Compliant**: 11/11 (100%)
+**Modules Compliant**: 11/11 on `terraform.tf` + `.terraform-docs.yml` structure (verified 2026-07-01)
 - backup-baseline, defender-baseline, hub-network, keyvault-cmk
 - management-baseline, management-groups, nsg-flow-logs
 - policy-baseline, sandbox, sentinel-siem, spoke-network
@@ -89,18 +102,12 @@
 **Acceptance Criteria Met**:
 - ✅ TFNFR25: terraform.tf exists in all modules with `~> 1.6` Terraform, `~> 4.0` azurerm
 - ✅ TFNFR26: required_providers block defined
-- ✅ TFNFR27: No provider blocks in modules (delegated to root)
+- ✅ TFNFR27: No provider blocks in modules (delegated to root) — confirmed clean, zero matches on re-audit
 - ✅ TFNFR2: .terraform-docs.yml configured for all modules
-- ✅ terraform validate passes on all modules
-- ✅ terraform fmt compliant on all modules
+- ⚠️ 6 of 11 modules still lack a `README.md` (`backup-baseline`, `hub-network`, `management-baseline`, `management-groups`, `policy-baseline`, `spoke-network`) — tracked in [TODO.md](TODO.md) Phase 2
+- ⚠️ `keyvault-cmk` and `sentinel-siem` are scaffold-only stubs with zero real resources, not full modules — tracked in [TODO.md](TODO.md) Phase 2
 
-**Documentation Created**:
-1. [AVM-INDEX.md](docs/AVM-INDEX.md) - Navigation hub for all AVM docs
-2. [AVM-QUICK-REFERENCE.md](docs/AVM-QUICK-REFERENCE.md) - Developer quick reference
-3. [IMPLEMENTATION-COMPLETE-SUMMARY.md](docs/IMPLEMENTATION-COMPLETE-SUMMARY.md) - Executive summary
-4. [SESSION-SUMMARY-AVM-PHASE1.md](docs/SESSION-SUMMARY-AVM-PHASE1.md) - Technical details
-5. [AVM-COMPLIANCE-PHASE-1-COMPLETE.md](docs/AVM-COMPLIANCE-PHASE-1-COMPLETE.md) - Completion report
-6. [AVM-IMPLEMENTATION-STRATEGY.md](docs/AVM-IMPLEMENTATION-STRATEGY.md) - Phases 2-4 roadmap
+**Documentation note**: The 6 documentation files originally listed here (AVM-INDEX.md, AVM-QUICK-REFERENCE.md, IMPLEMENTATION-COMPLETE-SUMMARY.md, SESSION-SUMMARY-AVM-PHASE1.md, AVM-COMPLIANCE-PHASE-1-COMPLETE.md, AVM-IMPLEMENTATION-STRATEGY.md) are referenced by the commit messages above but do not exist anywhere in the current repo tree (verified 2026-07-01 via full-repo glob) — either deleted in a later commit or never actually included in the diff despite the commit message. Removed from this entry as unverifiable; the `terraform.tf`/`.terraform-docs.yml` deliverables themselves are independently confirmed to exist.
 
 ---
 
@@ -125,7 +132,7 @@
   - ✅ variables.tf (local definitions)
   - ✅ outputs.tf (pass-through)
   - ✅ terraform.tfvars (example config)
-  - ✅ backend.hcl (TFC configuration)
+  - ✅ backend.hcl (azurerm backend configuration — TFC migration tracked in [TODO.md](TODO.md) Phase 1)
 - ✅ terraform fmt & validate passed
 - ✅ AVM Compliance: All 11 requirements verified
 
@@ -138,9 +145,7 @@
 - ✅ Full audit trail in git + TFC
 - ✅ Safe rollback via terraform destroy
 
-**Key Achievement**: Replaced ad-hoc PowerShell cleanup with production-ready IaC module that integrates with Phase 0 (Terraform Cloud backend).
-
-**Reference**: [docs/TASK-1.3-COMPLETION-REPORT.md](docs/TASK-1.3-COMPLETION-REPORT.md)
+**Key Achievement**: Replaced ad-hoc PowerShell cleanup with a production-ready IaC module.
 
 ---
 
@@ -215,36 +220,27 @@
 
 ## Previously Completed (From Initial Repo State)
 
-### ✅ Phase 0: Bootstrap - GitHub + Azure Integration
+### ✅ Bootstrap - GitHub Repository & Branch Protection
 
-**Status**: 🟡 PARTIALLY VERIFIED (Requires verification per PLAN.md Phase 0)
+**Status**: 🟢 CONFIRMED (verified 2026-07-01 via `gh api`)
 **What's In Place**:
-- ✅ GitHub repository: `HCW-Demo-LZDeployment` created and active
-- ❓ Section 4: Branch Protection (needs verification)
-- ❓ Section 5: GitHub Actions OIDC to Azure (needs verification)
-- ❓ Section 6: First GitHub Actions Workflow (needs verification)
-- ❓ Section 7: Terraform Remote State Backend (needs verification)
-- ❓ Section 8: Terraform CI/CD Workflows (needs verification)
-- ❓ Section 9: End-to-End Validation (needs verification)
-
-**Action Required**: Phase 0 verification per PLAN.md Phase 0 (Audit & Reconcile)
+- ✅ GitHub repository `HCW-Demo-LZDeployment` (owner: `saulpatinojr`) exists and is active
+- ✅ Branch protection ruleset active on `main`: `enforce_admins`, `required_linear_history`, no force pushes, no deletions, required conversation resolution
+- ⚠️ Required approving review count is 0 — protection exists structurally but doesn't require human review (tracked in [TODO.md](TODO.md) Phase 4)
+- ⚠️ OIDC federation, CI/CD workflows, and end-to-end pipeline health are tracked separately in [TODO.md](TODO.md) Phase 1 — as of 2026-07-01 the pipeline has no recorded successful run (root cause identified and fixed; verification pending)
 
 ---
 
-### ✅ Task 1.3: PowerShell Sandbox Cleanup (Previous Implementation)
+### ✅ PowerShell Sandbox Cleanup Script
 
-**Status**: 🟡 VALIDATE (marked for re-verification in Phase 5)
-**What's In Place**:
-- `terraform/scripts/Cleanup-ExpiredSandboxResources.ps1` - PowerShell script for sandbox cleanup
-- Feature: Tag-based lifecycle management
-- Feature: Dry-run capability
-
-**Action Required**: Phase 5 (Security Final Hardening) will validate and enhance with:
-- Input validation (GUID validation, subscription existence)
-- Sandbox tag validation
-- Max deletion limits
-- Log Analytics audit trail
-- Role-based checks
+**Status**: 🟢 CONFIRMED (verified 2026-07-01 by direct code read)
+**What's In Place** — `terraform/scripts/Cleanup-ExpiredSandboxResources.ps1`:
+- ✅ GUID format validation on subscription ID input (`[ValidatePattern(...)]`)
+- ✅ Subscription existence check via `Get-AzSubscription`
+- ✅ Sandbox tag validation (`purpose=sandbox`, throws "SAFETY VIOLATION" if absent)
+- ✅ Dry-run capability (`-DryRun`, default `true`), requires explicit `-Confirm` for real deletion
+- ✅ Max deletion limit (`-MaxDeletions`, default 100)
+- ⚠️ Log Analytics audit trail is a stub — `Write-AuditLog` prints structured JSON to console but does not call the Data Collector API; the code has a comment noting this ("In production, integrate with Send-AzOperationalInsightsDataCollector")
 
 ---
 
@@ -252,27 +248,17 @@
 
 | Category | Count | Status |
 |----------|-------|--------|
-| **Completed Deliverables** | 6 | ✅ |
-| **Optional Modules Created** | 3 | 🟦 (deferred) |
-| **Files Created** | 50+ | ✅ |
-| **Git Commits** | 6+ | ✅ |
-| **Documentation Pages** | 12+ | ✅ |
-| **Terraform Modules** | 11 | ✅ AVM-compliant |
+| **Terraform Modules** | 11 | 9 implemented, 2 scaffold-only stubs (`keyvault-cmk`, `sentinel-siem`) |
+| **GitHub Workflows** | 10 | All SHA-pinned as of 2026-07-01 |
+| **Frontend** | 1 static generator | Zero-backend, `.tfvars` output |
 
 ---
 
 ## What's Next
 
-See [TODO.md](TODO.md) for:
-- **Phase 0**: Bootstrap verification (PLAN.md Phase 0 - Audit & Reconcile)
-- **Phase 1**: Web App Container & Local Docker (PLAN.md Phase 1)
-- **Phase 2**: Web App Azure Deployment (PLAN.md Phase 2)
-- **Phase 3**: Web App Personalization & Launch (PLAN.md Phase 3)
-- **Phase 4**: Landing Zone Toolkit Consolidation (PLAN.md Phase 4)
-- **Phase 5**: Security Final Hardening Pass (PLAN.md Phase 5)
+See [TODO.md](TODO.md) for the current phase plan: CI/CD & OIDC reliability, Terraform module completeness, static generator enhancements, and documentation hardening.
 
 ---
 
-**Document Created**: June 30, 2026  
-**Last Updated**: June 30, 2026  
+**Last Updated**: July 1, 2026
 **Owner**: Platform Engineering
