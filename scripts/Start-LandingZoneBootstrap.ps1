@@ -31,10 +31,10 @@
                   with layered service principals (Main/Dev/Prod).
 
 .EXAMPLE
-    .\scripts\000_LZ_Bootloader.ps1
+    .\scripts\Start-LandingZoneBootstrap.ps1
 
 .EXAMPLE
-    .\scripts\000_LZ_Bootloader.ps1 -SkipToolValidation -SkipAzureSetup
+    .\scripts\Start-LandingZoneBootstrap.ps1 -SkipToolValidation -SkipAzureSetup
 #>
 
 [CmdletBinding(SupportsShouldProcess = $true)]
@@ -569,10 +569,18 @@ function Setup-Azure-OIDC {
 
             switch ($layer) {
                 'main' {
-                    # Main runs on push to main branch only
+                    # Main runs on push to main branch (terraform-apply.yml)
                     Add-OidcFederatedCredential -AppId $sp.appId `
                         -Name "github-main-branch" `
                         -Subject "repo:$GithubOwner/$RepoName`:ref:refs/heads/main"
+
+                    # terraform-plan.yml runs on pull_request against main and uses the
+                    # same repo-level AZURE_CLIENT_ID secret. Without this credential,
+                    # every PR-triggered Azure OIDC login fails (no subject matches a
+                    # pull_request-issued token).
+                    Add-OidcFederatedCredential -AppId $sp.appId `
+                        -Name "github-pull-request" `
+                        -Subject "repo:$GithubOwner/$RepoName`:pull_request"
                 }
                 'dev' {
                     # Dev runs on environment:dev
@@ -852,7 +860,7 @@ If you need to restart:
 
 - All service principals use OIDC federated credentials (no secrets stored)
 - Least-privilege RBAC: Contributor-only for main, +User Access Admin for dev/prod
-- Main SP scoped to main branch only (cannot deploy from other branches)
+- Main SP scoped to main-branch pushes and pull requests only (cannot deploy from other branches/forks)
 - No Owner roles assigned to any service principal
 - GitHub secrets are encrypted and never exposed in logs
 

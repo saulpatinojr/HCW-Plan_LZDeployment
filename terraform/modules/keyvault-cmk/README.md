@@ -86,7 +86,7 @@ resource "azurerm_key_vault" "cmk" {
 
 ### 1. Enable in Configuration
 
-Edit `.azure/deployment-options.yaml`:
+Copy `.azure/deployment-options.yaml.example` to `.azure/deployment-options.yaml` (if you haven't already) and edit it:
 ```yaml
 modules:
   cmk:
