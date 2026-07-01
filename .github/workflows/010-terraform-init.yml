@@ -250,7 +250,7 @@ jobs:
              - Deploy management (policies, logging)
              - Deploy workloads (applications)
 
-          STATE LOCATION: Terraform Cloud (${{ env.TF_CLOUD_ORGANIZATION || 'configured' }})
+          STATE LOCATION: Terraform Cloud (${{ vars.TF_CLOUD_ORGANIZATION || 'configured' }})
           WORKSPACE: landing-zone
 
           For issues, check:
@@ -266,17 +266,20 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const body = [
+              '## ✓ Workflow 010 - Init Complete',
+              '',
+              'Terraform has been initialized and validated:',
+              '- ✓ TFC backend connected',
+              '- ✓ OIDC authentication verified',
+              '- ✓ Service principal RBAC checked',
+              '- ✓ Configuration validated',
+              '',
+              'Ready to deploy!',
+            ].join('\n');
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## ✓ Workflow 010 - Init Complete
-
-Terraform has been initialized and validated:
-- ✓ TFC backend connected
-- ✓ OIDC authentication verified
-- ✓ Service principal RBAC checked
-- ✓ Configuration validated
-
-Ready to deploy!`
+              body,
             });
